@@ -73,6 +73,15 @@ void isr_handler(InterruptFrame *frame) {
         uint8_t scancode = inb(0x60);
         keyboard_handle(scancode);
         pic_send_eoi(1);
+    } else if (n == 36) {
+        /* IRQ 4: serial COM1 input */
+        while (inb(0x3F8 + 5) & 0x01) {
+            char c = inb(0x3F8);
+            char str[2] = {c, 0};
+            vga_print(str, VGA_WHITE_ON_BLACK);
+            serial_putchar(c);
+        }
+        pic_send_eoi(4);
     } else if (n >= 34 && n <= 47) {
         /* other IRQs */
         pic_send_eoi(n - 32);
@@ -97,9 +106,12 @@ void interrupts_init(void) {
 
     idt_load();
 
-    /* unmask IRQ 0 (timer) and IRQ 1 (keyboard), mask the rest */
-    outb(0x21, 0xFC);
+    /* unmask IRQ 0 (timer), IRQ 1 (keyboard), IRQ 4 (COM1) */
+    outb(0x21, 0xEC);
     outb(0xA1, 0xFF);
+
+    /* enable serial receive interrupts on COM1 */
+    outb(0x3F8 + 1, 0x01);
 
     /* enable interrupts */
     __asm__ volatile ("sti");
