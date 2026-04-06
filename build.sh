@@ -22,6 +22,7 @@ gcc $CFLAGS -o kernel.o kernel.c
 gcc $CFLAGS -o vga.o vga.c
 gcc $CFLAGS -o serial.o serial.c
 gcc $CFLAGS -o idt.o idt.c
+gcc $CFLAGS -o keyboard.o keyboard.c
 gcc $CFLAGS -o interrupts.o interrupts.c
 
 echo ""
@@ -29,7 +30,7 @@ echo "=== Step 4: Link kernel into flat binary ==="
 echo "  -T kernel.ld    : use our linker script (load at 0x100000)"
 echo "  --oformat binary : raw flat binary, no ELF headers"
 ld -T kernel.ld -o kernel.bin \
-    kernel.o vga.o serial.o idt.o interrupts.o isr.o \
+    kernel.o vga.o serial.o idt.o keyboard.o interrupts.o isr.o \
     --oformat binary
 
 echo ""

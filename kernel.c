@@ -15,6 +15,12 @@ __attribute__((section(".text.kernel_main"))) void kernel_main(void) {
     vga_print("Interrupts:    ON\n", VGA_GREEN_ON_BLACK);
     serial_print("Interrupts:    ON\n");
 
+    vga_print("Keyboard:      OK\n", VGA_GREEN_ON_BLACK);
+    serial_print("Keyboard:      OK\n");
+
+    vga_print("\n> ", VGA_WHITE_ON_BLACK);
+    serial_print("\n> ");
+
     /* idle loop */
     for (;;)
         __asm__ volatile ("hlt");

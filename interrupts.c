@@ -2,6 +2,7 @@
 #include "serial.h"
 #include "io.h"
 #include "idt.h"
+#include "keyboard.h"
 
 /* ISR stubs defined in isr.asm */
 extern void isr0(void);  extern void isr1(void);  extern void isr2(void);
@@ -70,9 +71,7 @@ void isr_handler(InterruptFrame *frame) {
     } else if (n == 33) {
         /* IRQ 1: keyboard */
         uint8_t scancode = inb(0x60);
-        serial_print("KEY: 0x");
-        serial_print_hex(scancode);
-        serial_print("\n");
+        keyboard_handle(scancode);
         pic_send_eoi(1);
     } else if (n >= 34 && n <= 47) {
         /* other IRQs */
