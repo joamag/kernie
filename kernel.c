@@ -2,7 +2,7 @@
 #include "serial.h"
 #include "elf.h"
 
-void kernel_main(void) {
+__attribute__((section(".text.kernel_main"))) void kernel_main(void) {
     serial_init();
 
     vga_clear();
