@@ -6,8 +6,8 @@ __attribute__((section(".text.kernel_main"))) void kernel_main(void) {
     serial_init();
 
     vga_clear();
-    vga_print("=== Mini Kernel ===\n", VGA_GREEN_ON_BLACK);
-    serial_print("=== Mini Kernel ===\n");
+    vga_print("=== Kernie the Kernel ===\n", VGA_GREEN_ON_BLACK);
+    serial_print("=== Kernie the Kernel ===\n");
 
     vga_print("VGA text mode: OK\n", VGA_WHITE_ON_BLACK);
     serial_print("VGA text mode: OK\n");
