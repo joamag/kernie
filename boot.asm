@@ -99,6 +99,40 @@ long_mode_entry:
     mov ss, ax
     mov rsp, 0x90000
 
+    ; --- init serial port (COM1 0x3F8) early ---
+    mov dx, 0x3F9
+    mov al, 0x00
+    out dx, al          ; disable interrupts
+    mov dx, 0x3FB
+    mov al, 0x80
+    out dx, al          ; enable DLAB
+    mov dx, 0x3F8
+    mov al, 0x01
+    out dx, al          ; baud divisor low (115200)
+    mov dx, 0x3F9
+    mov al, 0x00
+    out dx, al          ; baud divisor high
+    mov dx, 0x3FB
+    mov al, 0x03
+    out dx, al          ; 8N1
+    mov dx, 0x3FA
+    mov al, 0xC7
+    out dx, al          ; enable FIFO
+    mov dx, 0x3FC
+    mov al, 0x03
+    out dx, al          ; RTS/DSR
+
+    ; send "OK\n" to serial to confirm we got here
+    mov dx, 0x3F8
+    mov al, 'O'
+    out dx, al
+    mov al, 'K'
+    out dx, al
+    mov al, 13
+    out dx, al
+    mov al, 10
+    out dx, al
+
     ; copy kernel from 0x8000 to 0x100000
     mov rsi, 0x8000
     mov rdi, KERNEL_OFFSET
