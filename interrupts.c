@@ -33,7 +33,7 @@ static const char *exception_names[] = {
     "Virtualization", "Control protection",
 };
 
-static volatile uint64_t tick_count = 0;
+volatile uint64_t tick_count = 0;
 
 typedef struct {
     uint64_t r15, r14, r13, r12, r11, r10, r9, r8;

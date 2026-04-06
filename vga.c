@@ -14,7 +14,13 @@ void vga_clear(void) {
 }
 
 void vga_putchar(char c, uint8_t color) {
-    if (c == '\n') {
+    if (c == '\b') {
+        if (cursor > 0) {
+            cursor--;
+            vga[cursor] = (VGA_WHITE_ON_BLACK << 8) | ' ';
+        }
+        return;
+    } else if (c == '\n') {
         cursor += VGA_WIDTH - (cursor % VGA_WIDTH);
     } else {
         vga[cursor] = (color << 8) | c;

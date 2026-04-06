@@ -1,25 +1,14 @@
 #include "vga.h"
 #include "serial.h"
-#include "elf.h"
 #include "interrupts.h"
+#include "shell.h"
 
 __attribute__((section(".text.kernel_main"))) void kernel_main(void) {
     serial_init();
     vga_clear();
 
-    vga_print("=== Kernie the Kernel ===\n", VGA_GREEN_ON_BLACK);
-    serial_print("=== Kernie the Kernel ===\n");
-
     interrupts_init();
-
-    vga_print("Interrupts:    ON\n", VGA_GREEN_ON_BLACK);
-    serial_print("Interrupts:    ON\n");
-
-    vga_print("Keyboard:      OK\n", VGA_GREEN_ON_BLACK);
-    serial_print("Keyboard:      OK\n");
-
-    vga_print("\n> ", VGA_WHITE_ON_BLACK);
-    serial_print("\n> ");
+    shell_init();
 
     /* idle loop */
     for (;;)
