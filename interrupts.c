@@ -3,6 +3,7 @@
 #include "io.h"
 #include "idt.h"
 #include "keyboard.h"
+#include "input.h"
 
 /* ISR stubs defined in isr.asm */
 extern void isr0(void);  extern void isr1(void);  extern void isr2(void);
@@ -77,9 +78,7 @@ void isr_handler(InterruptFrame *frame) {
         /* IRQ 4: serial COM1 input */
         while (inb(0x3F8 + 5) & 0x01) {
             char c = inb(0x3F8);
-            char str[2] = {c, 0};
-            vga_print(str, VGA_WHITE_ON_BLACK);
-            serial_putchar(c);
+            input_handle_char(c);
         }
         pic_send_eoi(4);
     } else if (n >= 34 && n <= 47) {

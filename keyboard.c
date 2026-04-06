@@ -1,6 +1,5 @@
 #include "keyboard.h"
-#include "vga.h"
-#include "serial.h"
+#include "input.h"
 
 /* US QWERTY scancode set 1 -> ASCII (lowercase) */
 static const char scancode_map[128] = {
@@ -45,8 +44,5 @@ void keyboard_handle(uint8_t scancode) {
     if (c == 0)
         return;
 
-    /* echo to both VGA and serial */
-    char str[2] = {c, 0};
-    vga_print(str, VGA_WHITE_ON_BLACK);
-    serial_putchar(c);
+    input_handle_char(c);
 }
