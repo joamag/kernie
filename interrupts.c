@@ -89,7 +89,7 @@ void isr_handler(InterruptFrame *frame) {
 
 void interrupts_init(void) {
     typedef void (*isr_fn)(void);
-    isr_fn stubs[48] = {
+    static const isr_fn stubs[48] = {
         isr0,  isr1,  isr2,  isr3,  isr4,  isr5,  isr6,  isr7,
         isr8,  isr9,  isr10, isr11, isr12, isr13, isr14, isr15,
         isr16, isr17, isr18, isr19, isr20, isr21, isr22, isr23,
