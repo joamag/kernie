@@ -10,7 +10,7 @@ void serial_init(void) {
     outb(SERIAL_COM1 + 1, 0x00);
     outb(SERIAL_COM1 + 3, 0x03);
     outb(SERIAL_COM1 + 2, 0xC7);
-    outb(SERIAL_COM1 + 4, 0x03);
+    outb(SERIAL_COM1 + 4, 0x0B);
 }
 
 void serial_putchar(char c) {
