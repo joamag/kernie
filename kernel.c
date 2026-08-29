@@ -3,8 +3,15 @@
 #include "interrupts.h"
 #include "shell.h"
 #include "input.h"
+#include "mem.h"
+
+/* placed by kernel.ld, the flat binary carries no .bss so it holds whatever
+   was in memory until we clear it */
+extern uint8_t __bss_start[], __bss_end[];
 
 __attribute__((section(".text.kernel_main"))) void kernel_main(void) {
+    memset(__bss_start, 0, (uintptr_t)__bss_end - (uintptr_t)__bss_start);
+
     serial_init();
     vga_clear();
 
