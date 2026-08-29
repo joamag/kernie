@@ -19,27 +19,34 @@ static const char scancode_map_shift[128] = {
     '*', 0, ' ',
 };
 
-static int shift_held = 0;
+static int shift_left = 0;
+static int shift_right = 0;
 
 void keyboard_handle(uint8_t scancode) {
     /* key release (bit 7 set) */
     if (scancode & 0x80) {
         uint8_t released = scancode & 0x7F;
-        if (released == 0x2A || released == 0x36)
-            shift_held = 0;
+        if (released == 0x2A)
+            shift_left = 0;
+        else if (released == 0x36)
+            shift_right = 0;
         return;
     }
 
-    /* shift press */
-    if (scancode == 0x2A || scancode == 0x36) {
-        shift_held = 1;
+    /* shift press, tracked per key so releasing one leaves the other held */
+    if (scancode == 0x2A) {
+        shift_left = 1;
+        return;
+    }
+    if (scancode == 0x36) {
+        shift_right = 1;
         return;
     }
 
     if (scancode >= 128)
         return;
 
-    const char *map = shift_held ? scancode_map_shift : scancode_map;
+    const char *map = (shift_left || shift_right) ? scancode_map_shift : scancode_map;
     char c = map[scancode];
     if (c == 0)
         return;

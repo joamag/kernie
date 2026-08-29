@@ -3,7 +3,7 @@ set -e
 
 # the system gcc/ld are only usable when they target x86-64 ELF, which is not
 # the case on macOS, so prefer a cross toolchain whenever one is installed
-if command -v x86_64-elf-gcc > /dev/null; then
+if command -v x86_64-elf-gcc > /dev/null && command -v x86_64-elf-ld > /dev/null; then
     CC="${CC:-x86_64-elf-gcc}"
     LD="${LD:-x86_64-elf-ld}"
 else
