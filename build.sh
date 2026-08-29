@@ -27,8 +27,11 @@ echo "  -fno-stack-protector : no __stack_chk_fail (doesn't exist here)"
 echo "  -mno-red-zone        : unsafe in kernel, interrupts would clobber it"
 echo "  -mgeneral-regs-only  : no SSE/x87, CR4.OSFXSR is never set so they #UD"
 echo "  -fno-pic             : no position-independent code overhead"
+echo "  -fno-tree-loop-distribute-patterns : keeps the mem.c loops from being"
+echo "                         rewritten into calls to themselves"
 echo "  -c                   : compile only, don't link yet"
-CFLAGS="-ffreestanding -fno-stack-protector -mno-red-zone -mgeneral-regs-only -fno-pic -m64 -c"
+CFLAGS="-ffreestanding -fno-stack-protector -mno-red-zone -mgeneral-regs-only -fno-pic"
+CFLAGS="$CFLAGS -fno-tree-loop-distribute-patterns -m64 -c"
 $CC $CFLAGS -o kernel.o kernel.c
 $CC $CFLAGS -o vga.o vga.c
 $CC $CFLAGS -o serial.o serial.c
@@ -37,13 +40,14 @@ $CC $CFLAGS -o input.o input.c
 $CC $CFLAGS -o keyboard.o keyboard.c
 $CC $CFLAGS -o shell.o shell.c
 $CC $CFLAGS -o interrupts.o interrupts.c
+$CC $CFLAGS -o mem.o mem.c
 
 echo ""
 echo "=== Step 4: Link kernel into flat binary ==="
 echo "  -T kernel.ld    : use our linker script (load at 0x100000)"
 echo "  --oformat binary : raw flat binary, no ELF headers"
 $LD -T kernel.ld -o kernel.bin \
-    kernel.o vga.o serial.o idt.o input.o keyboard.o shell.o interrupts.o isr.o \
+    kernel.o vga.o serial.o idt.o input.o keyboard.o shell.o interrupts.o mem.o isr.o \
     --oformat binary
 
 # boot.asm reads 30 sectors (15360 bytes) into 0x8000, anything past that is

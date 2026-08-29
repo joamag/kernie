@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include "mem.h"
+
 typedef struct {
     uint8_t  e_ident[16];
     uint16_t e_type;
@@ -36,17 +38,6 @@ typedef struct {
 
 typedef void (*entry_fn)(void);
 
-static void memcpy_k(void *dst, const void *src, uint64_t n) {
-    uint8_t *d = dst;
-    const uint8_t *s = src;
-    while (n--) *d++ = *s++;
-}
-
-static void memset_k(void *dst, uint8_t val, uint64_t n) {
-    uint8_t *d = dst;
-    while (n--) *d++ = val;
-}
-
 static int load_elf(void *elf_data) {
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf_data;
 
@@ -59,14 +50,14 @@ static int load_elf(void *elf_data) {
         if (phdr->p_type != PT_LOAD)
             continue;
 
-        memcpy_k((void *)phdr->p_vaddr,
-                 (uint8_t *)elf_data + phdr->p_offset,
-                 phdr->p_filesz);
+        memcpy((void *)phdr->p_vaddr,
+               (uint8_t *)elf_data + phdr->p_offset,
+               phdr->p_filesz);
 
         if (phdr->p_memsz > phdr->p_filesz) {
-            memset_k((void *)(phdr->p_vaddr + phdr->p_filesz),
-                     0,
-                     phdr->p_memsz - phdr->p_filesz);
+            memset((void *)(phdr->p_vaddr + phdr->p_filesz),
+                   0,
+                   phdr->p_memsz - phdr->p_filesz);
         }
     }
 
