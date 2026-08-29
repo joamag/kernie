@@ -27,11 +27,15 @@ echo "  -fno-stack-protector : no __stack_chk_fail (doesn't exist here)"
 echo "  -mno-red-zone        : unsafe in kernel, interrupts would clobber it"
 echo "  -mgeneral-regs-only  : no SSE/x87, CR4.OSFXSR is never set so they #UD"
 echo "  -fno-pic             : no position-independent code overhead"
-echo "  -fno-tree-loop-distribute-patterns : keeps the mem.c loops from being"
-echo "                         rewritten into calls to themselves"
 echo "  -c                   : compile only, don't link yet"
-CFLAGS="-ffreestanding -fno-stack-protector -mno-red-zone -mgeneral-regs-only -fno-pic"
-CFLAGS="$CFLAGS -fno-tree-loop-distribute-patterns -m64 -c"
+CFLAGS="-ffreestanding -fno-stack-protector -mno-red-zone -mgeneral-regs-only -fno-pic -m64 -c"
+
+# GCC's loop idiom pass can rewrite the mem.c byte loops into calls to
+# themselves, clang has no such pass and rejects the flag outright
+if $CC -fno-tree-loop-distribute-patterns -E - < /dev/null > /dev/null 2>&1; then
+    echo "  -fno-tree-loop-distribute-patterns : no self calls in mem.c"
+    CFLAGS="$CFLAGS -fno-tree-loop-distribute-patterns"
+fi
 $CC $CFLAGS -o kernel.o kernel.c
 $CC $CFLAGS -o vga.o vga.c
 $CC $CFLAGS -o serial.o serial.c

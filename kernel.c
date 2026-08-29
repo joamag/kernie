@@ -10,7 +10,7 @@
 extern uint8_t __bss_start[], __bss_end[];
 
 __attribute__((section(".text.kernel_main"))) void kernel_main(void) {
-    memset(__bss_start, 0, __bss_end - __bss_start);
+    memset(__bss_start, 0, (uintptr_t)__bss_end - (uintptr_t)__bss_start);
 
     serial_init();
     vga_clear();

@@ -16,7 +16,7 @@ void *memmove(void *dst, const void *src, uint64_t n) {
     const uint8_t *s = src;
 
     /* copy backwards when the regions overlap the wrong way */
-    if (d > s) {
+    if ((uintptr_t)d > (uintptr_t)s) {
         d += n;
         s += n;
         while (n--) *--d = *--s;
