@@ -7,6 +7,7 @@
 
 static char cmd_buf[CMD_MAX];
 static int cmd_len = 0;
+static int last_was_cr = 0;
 
 static void print(const char *str, uint8_t color) {
     vga_print(str, color);
@@ -93,6 +94,14 @@ void shell_init(void) {
 }
 
 void shell_handle_char(char c) {
+    /* swallow the LF of a CRLF pair, it is not a second command */
+    if (c == '\n' && last_was_cr) {
+        last_was_cr = 0;
+        return;
+    }
+
+    last_was_cr = (c == '\r');
+
     if (c == '\n' || c == '\r') {
         print("\n", VGA_WHITE_ON_BLACK);
         execute();
