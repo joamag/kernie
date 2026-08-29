@@ -39,6 +39,7 @@ static void cmd_help(void) {
     print("  echo <msg> - print a message\n", VGA_WHITE_ON_BLACK);
     print("  tick       - show timer tick count\n", VGA_WHITE_ON_BLACK);
     print("  reboot     - reboot the system\n", VGA_WHITE_ON_BLACK);
+    print("  shutdown   - power off the machine\n", VGA_WHITE_ON_BLACK);
 }
 
 static void cmd_echo(const char *args) {
@@ -61,6 +62,14 @@ static void cmd_reboot(void) {
     outb(0x64, 0xFE);
 }
 
+static void cmd_shutdown(void) {
+    print("Shutting down...\n", VGA_RED_ON_BLACK);
+    /* enter ACPI sleep state 5, the port differs between emulators */
+    outw(0x604, 0x2000);
+    outw(0xB004, 0x2000);
+    outw(0x4004, 0x3400);
+}
+
 static void execute(void) {
     cmd_buf[cmd_len] = 0;
 
@@ -78,6 +87,8 @@ static void execute(void) {
         cmd_tick();
     } else if (streq(cmd_buf, "reboot")) {
         cmd_reboot();
+    } else if (streq(cmd_buf, "shutdown")) {
+        cmd_shutdown();
     } else {
         print(cmd_buf, VGA_RED_ON_BLACK);
         print(": command not found\n", VGA_RED_ON_BLACK);

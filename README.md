@@ -69,6 +69,7 @@ Type 'help' for available commands.
 | `echo <msg>` | print a message             |
 | `tick`       | show the timer tick count   |
 | `reboot`     | reboot the system           |
+| `shutdown`   | power off the machine       |
 
 ## Memory map
 
