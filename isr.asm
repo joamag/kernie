@@ -51,8 +51,8 @@ ISR_NOERR 25
 ISR_NOERR 26
 ISR_NOERR 27
 ISR_NOERR 28
-ISR_NOERR 29
-ISR_NOERR 30
+ISR_ERR   29  ; VMM communication
+ISR_ERR   30  ; security exception
 ISR_NOERR 31
 
 ; IRQs 0-15 (mapped to interrupts 32-47)
