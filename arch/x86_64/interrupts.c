@@ -76,10 +76,9 @@ void isr_handler(InterruptFrame *frame) {
         pic_send_eoi(1);
     } else if (n == 36) {
         /* IRQ 4: serial COM1 input */
-        while (inb(0x3F8 + 5) & 0x01) {
-            char c = inb(0x3F8);
-            input_handle_char(c);
-        }
+        int c;
+        while ((c = serial_getchar()) >= 0)
+            input_handle_char((char)c);
         pic_send_eoi(4);
     } else if (n >= 34 && n <= 47) {
         /* other IRQs */
