@@ -42,7 +42,9 @@ jobs:
             echo "| Artifact | Bytes |"
             echo "| --- | --- |"
             for file in boot.bin kernel.bin kernel.elf os.bin; do
-              [ -f "$file" ] && printf "| \`%s\` | %s |\n" "$file" "$(wc -c < "$file" | tr -d ' ')"
+              if [ -f "$file" ]; then
+                printf "| \`%s\` | %s |\n" "$file" "$(wc -c < "$file" | tr -d ' ')"
+              fi
             done
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
