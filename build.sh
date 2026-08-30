@@ -41,6 +41,12 @@ arm64)
     ;;
 esac
 
+echo "=== Toolchain ==="
+echo "  ARCH: $ARCH"
+echo "  CC:   $CC"
+echo "  LD:   $LD"
+echo ""
+
 OBJDIR="build/$ARCH"
 rm -rf "$OBJDIR"
 mkdir -p "$OBJDIR"
@@ -86,6 +92,8 @@ fi
 OBJS="$ASM_OBJ"
 for src in $COMMON_SRC $ARCH_SRC; do
     obj="$OBJDIR/$(basename "${src%.c}").o"
+    # CFLAGS has to split into separate arguments
+    # shellcheck disable=SC2086
     $CC $CFLAGS -o "$obj" "$src"
     OBJS="$OBJS $obj"
 done
@@ -95,6 +103,8 @@ echo "=== Step 4: Link the kernel ==="
 if [ "$ARCH" = "x86_64" ]; then
     echo "  -T arch/x86_64/kernel.ld : linker script, load at 0x100000"
     echo "  --oformat binary : raw flat binary, no ELF headers"
+    # OBJS has to split into separate arguments
+    # shellcheck disable=SC2086
     $LD -T arch/x86_64/kernel.ld -o kernel.bin $OBJS --oformat binary
 
     # boot.asm reads 30 sectors (15360 bytes) into 0x8000, anything past that
@@ -108,6 +118,8 @@ if [ "$ARCH" = "x86_64" ]; then
     fi
 else
     echo "  -T arch/arm64/kernel.ld : linker script, load at 0x40080000"
+    # OBJS has to split into separate arguments
+    # shellcheck disable=SC2086
     $LD -T arch/arm64/kernel.ld -o kernel.elf $OBJS
     KERNEL_SIZE=$(( $(wc -c < kernel.elf) ))
 fi

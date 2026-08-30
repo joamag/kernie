@@ -5,6 +5,10 @@
 # the order below follows build.sh, toolchain selection first, then the build,
 # then what the built kernel actually does
 
+# qemu is slower without hardware acceleration, so CI raises these
+BOOT_WAIT="${BOOT_WAIT:-3}"
+CMD_WAIT="${CMD_WAIT:-1}"
+
 PASS=0
 FAIL=0
 
@@ -63,18 +67,20 @@ run_guest () {
         qemu-system-x86_64 -drive format=raw,file=os.bin \
             -display none -serial stdio < "$fifo" > "$log" 2>&1 &
     else
+        # QEMU_EXTRA has to split into separate arguments
+        # shellcheck disable=SC2086
         qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 128 $QEMU_EXTRA \
             -kernel kernel.elf -display none -serial stdio < "$fifo" > "$log" 2>&1 &
     fi
     qpid=$!
     exec 3> "$fifo"
 
-    sleep 3
+    sleep "$BOOT_WAIT"
     for cmd in "$@"; do
         printf '%s\r' "$cmd" >&3
-        sleep 1
+        sleep "$CMD_WAIT"
     done
-    sleep 2
+    sleep $((CMD_WAIT + 1))
 
     if kill -0 "$qpid" 2>/dev/null; then
         GUEST_ALIVE=yes
@@ -93,24 +99,24 @@ run_guest () {
 echo "=== Toolchain selection ==="
 
 out=$(PATH="/usr/bin:/bin" ARCH=arm64 ./build.sh 2>&1)
-expect_in "arm64 falls back to the Debian toolchain" "aarch64-linux-gnu-gcc" "$out"
+expect_in "arm64 falls back to the Debian toolchain" "CC:   aarch64-linux-gnu-gcc" "$out"
 
 stubs=$(stub_dir aarch64-elf-gcc aarch64-elf-ld)
 out=$(PATH="$stubs:/usr/bin:/bin" ARCH=arm64 ./build.sh 2>&1)
-expect_in "arm64 prefers the bare metal toolchain" "STUB aarch64-elf-gcc" "$out"
-expect_not_in "arm64 skips the fallback when elf tools exist" "aarch64-linux-gnu-gcc" "$out"
+expect_in "arm64 prefers the bare metal toolchain" "CC:   aarch64-elf-gcc" "$out"
+expect_not_in "arm64 skips the fallback when elf tools exist" "aarch64-linux-gnu" "$out"
 rm -rf "$stubs"
 
 out=$(PATH="/usr/bin:/bin" ARCH=arm64 CC=my-own-cc ./build.sh 2>&1)
-expect_in "arm64 honours a CC override" "my-own-cc" "$out"
+expect_in "arm64 honours a CC override" "CC:   my-own-cc" "$out"
 
 # the compiler runs before the linker, so an LD override needs a working CC
 out=$(ARCH=arm64 LD=my-own-ld ./build.sh 2>&1)
-expect_in "arm64 honours an LD override" "my-own-ld" "$out"
+expect_in "arm64 honours an LD override" "LD:   my-own-ld" "$out"
 
 stubs=$(stub_dir x86_64-elf-gcc x86_64-elf-ld nasm)
 out=$(PATH="$stubs:/usr/bin:/bin" ARCH=x86_64 ./build.sh 2>&1)
-expect_in "x86_64 prefers the bare metal toolchain" "STUB nasm" "$out"
+expect_in "x86_64 prefers the bare metal toolchain" "CC:   x86_64-elf-gcc" "$out"
 rm -rf "$stubs"
 
 out=$(ARCH=sparc ./build.sh 2>&1)
