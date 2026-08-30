@@ -1,3 +1,13 @@
+/**
+ * kernel/version.h
+ *
+ * Version, architecture and build stamp reported by the boot banner.
+ *
+ * The architecture is derived from the compiler rather than configured, so it
+ * cannot drift from the target actually being built, and the date and time are
+ * filled in by the preprocessor on every build.
+ */
+
 #ifndef VERSION_H
 #define VERSION_H
 

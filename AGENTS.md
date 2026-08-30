@@ -117,20 +117,54 @@ These have each cost real debugging time. Read them before changing build flags.
 
 **There is no `printf`.** Output goes through `console_print` and `console_print_hex`, which prints a fixed width hexadecimal value. A formatted printer is planned and will make debugging anything numeric far less painful.
 
+## Comments
+
+There are two comment forms in the tree and they are not interchangeable.
+
+A `/** */` block documents something. Every source file opens with one naming the file, stating what it is for, and explaining the design decisions behind it. The same form documents a function in a header, where the contract is worth stating separately from the implementation.
+
+```c
+/**
+ * drivers/uart_pl011.c
+ *
+ * The PL011 UART on the QEMU virt machine, reached through memory mapped
+ * registers rather than a port space, which arm64 does not have.
+ *
+ * No initialisation is performed. The firmware leaves the UART enabled at a
+ * usable baud rate, and programming the divisor would mean knowing the clock,
+ * which is only discoverable from the device tree the kernel does not parse
+ * yet.
+ */
+```
+
+The block opens with `/**` alone, the subject sits on the first content line, every line carries a ` * ` prefix, a separating line is a bare ` *`, and the closing ` */` sits alone at the end.
+
+A `//` line comment explains a specific line or a short run of them, inline with the code:
+
+```c
+// copy backwards when the regions overlap the wrong way
+if ((uintptr_t)d > (uintptr_t)s) {
+```
+
+The rule that matters more than either form is what goes in them. The design decisions and the rationale are the point, so a comment should say why the code is shaped the way it is and what would go wrong under the obvious alternative. A header that only restates the file name earns nothing, and neither does a comment restating the line beneath it. A constraint that has already cost debugging time belongs in a comment rather than in a commit message nobody will read again.
+
+Do not repeat the file header in a comment immediately below it. Say it once, in the header, where it is found first.
+
+Assembly and shell sources have no block comment syntax, so the file header there takes the same shape with its own prefix, `;` in NASM sources, `//` in GAS sources and `#` in shell scripts.
+
 ## Style Guide
 
 - C sources use 4-space indentation, no tabs.
 - Braces follow K&R style, the opening brace on the same line as the statement.
 - A space before the parenthesis in control structures: `if (condition)`, `for (...)`, `while (...)`.
 - Pointer declarations use right alignment: `const char *str`.
-- C comments use block style only (`/* ... */`), lowercase, with no trailing period. Assembly uses `;` in NASM sources and `//` in GAS sources.
-- Comments explain why rather than what, and the tree leans towards commenting the surprising rather than the obvious.
+- Comments follow the two forms described above, `/** */` to document and `//` inline, and explain why rather than what.
 - Naming uses `snake_case` for functions and variables, `UPPER_CASE` for macros and constants, and typedef struct names are PascalCase without a suffix, such as `IdtEntry` and `InterruptFrame`.
 - Header guards are the bare uppercase file name, such as `CONSOLE_H`.
 - Includes are path qualified from the tree root, such as `#include "drivers/vga.h"`, and the build passes `-I.`.
 - Headers live beside their sources rather than in a separate `include/` tree.
 - There is no hard line length limit, though most lines sit well under 100 characters.
-- Sources use LF line endings and carry no license header.
+- Sources use LF line endings and carry no license header, only the file header described above.
 - Never use the em dash character, in sources, in documentation or in commit messages.
 - Never add AI or assistant attribution to commits, pull requests or issues.
 
@@ -185,6 +219,7 @@ version: 0.2.0
 - [ ] `kernel/` and `lib/` still compile for both targets, with no `#ifdef` introduced
 - [ ] The kernel is still inside the 15360 byte ceiling on x86-64
 - [ ] README and ROADMAP reflect anything that changed about the layout or the targets
+- [ ] New source files carry a file header explaining their purpose and rationale
 - [ ] No debugging output and no commented out code left behind
 - [ ] No em dash, and no AI attribution anywhere
 

@@ -1,8 +1,16 @@
+/**
+ * arch/arm64/console.c
+ *
+ * Console for arm64.
+ *
+ * The virt machine has no text buffer, so the UART is the whole console and
+ * the colour attribute is discarded rather than mapped to escape sequences,
+ * which would assume a terminal on the other end. Clearing the screen is the
+ * one exception, since there is no other way to express it.
+ */
+
 #include "kernel/console.h"
 #include "drivers/serial.h"
-
-/* the virt machine has no text buffer, so the console is the UART alone and
-   the colour attribute is discarded */
 
 void console_init(void) {
     serial_init();

@@ -1,8 +1,14 @@
+/**
+ * arch/x86_64/console.c
+ *
+ * Console for x86-64, mirroring output to both the VGA text buffer and the
+ * UART so that the same session is visible on a screen and over a serial
+ * line.
+ */
+
 #include "kernel/console.h"
 #include "drivers/vga.h"
 #include "drivers/serial.h"
-
-/* x86-64 has both a VGA text buffer and a UART, so mirror everything to both */
 
 void console_init(void) {
     serial_init();

@@ -1,3 +1,22 @@
+/**
+ * drivers/vga.c
+ *
+ * Text output over the 80x25 VGA buffer the BIOS leaves mapped at 0xB8000.
+ *
+ * The buffer is written directly as an array of character and attribute
+ * pairs, since the BIOS interrupts that would otherwise do this are gone once
+ * the CPU is in long mode.
+ *
+ * Scrolling copies the visible rows up by one and blanks the last. A ring
+ * buffer with a moving origin would avoid the copy, but every write would then
+ * have to account for the offset, and 4000 bytes is cheap enough that the
+ * simpler shape wins.
+ *
+ * The hardware cursor at ports 0x3D4 and 0x3D5 is never moved, so there is no
+ * visible caret. Only the software cursor tracking the write position
+ * exists.
+ */
+
 #include "drivers/vga.h"
 
 #define VGA_BUFFER 0xB8000

@@ -1,8 +1,19 @@
 #!/bin/bash
+#
+# build.sh
+#
+# Builds the kernel for one target, selected through ARCH.
+#
+# The two targets do not produce the same kind of artefact. x86_64 links a flat
+# binary with no headers and glues it behind a boot sector, because the sector
+# has to jump straight to the first byte. arm64 links an ELF and stops there,
+# because QEMU reads the program headers and does the loading itself.
+#
+# The steps are narrated as they run. It is a teaching kernel, and the flags
+# involved are not obvious enough to leave unexplained.
+
 set -e
 
-# ARCH picks the target, x86_64 builds a bootable disk image while arm64
-# builds an ELF that QEMU loads directly with -kernel
 ARCH="${ARCH:-x86_64}"
 
 COMMON_SRC="kernel/kernel.c kernel/shell.c kernel/input.c drivers/serial.c lib/mem.c"

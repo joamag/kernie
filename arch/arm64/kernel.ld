@@ -1,3 +1,17 @@
+/**
+ * arch/arm64/kernel.ld
+ *
+ * Linker script for the arm64 ELF.
+ *
+ * The load address sits at the usual kernel offset into the RAM the virt
+ * machine starts at 0x40000000. QEMU honours the program headers, so unlike
+ * the x86-64 script the entry point here is real.
+ *
+ * The stack is carved out after .bss rather than placed at a fixed address, so
+ * that it follows the image instead of having to be kept clear of it by
+ * hand.
+ */
+
 ENTRY(_start)
 
 SECTIONS {

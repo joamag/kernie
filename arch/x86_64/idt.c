@@ -1,3 +1,17 @@
+/**
+ * arch/x86_64/idt.c
+ *
+ * Interrupt descriptor table gates and PIC remapping.
+ *
+ * The PIC is remapped because the vectors it raises out of reset, 0 through
+ * 15, collide with the CPU exception vectors, making a keyboard interrupt
+ * indistinguishable from a general protection fault. Moving the master to 32
+ * and the slave to 40 puts them above the architecturally reserved range.
+ *
+ * The existing masks are read before the initialisation sequence and written
+ * back after it, since the sequence itself does not preserve them.
+ */
+
 #include "arch/x86_64/idt.h"
 
 static IdtEntry idt[IDT_ENTRIES];

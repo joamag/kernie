@@ -1,9 +1,17 @@
 #!/bin/bash
-# test.sh - builds every target and boots it under QEMU, then drives the shell
-# over the serial port and checks what comes back
 #
-# the order below follows build.sh, toolchain selection first, then the build,
-# then what the built kernel actually does
+# test.sh
+#
+# Builds every target, boots each one under QEMU and drives the shell over the
+# serial port, checking what comes back.
+#
+# There is no unit test framework here and there cannot easily be coverage
+# either, since instrumentation needs a runtime that writes profile data to a
+# filesystem and a freestanding kernel has none. Behaviour is therefore
+# asserted by booting the thing and typing at it.
+#
+# The order follows build.sh, toolchain selection first, then the build, then
+# what the built kernel actually does.
 
 # qemu is slower without hardware acceleration, so CI raises these
 BOOT_WAIT="${BOOT_WAIT:-3}"

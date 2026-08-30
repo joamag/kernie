@@ -1,5 +1,15 @@
-// boot.S - entry point for the virt machine
-// QEMU loads the ELF and jumps here, so there is no real mode dance
+// arch/arm64/boot.S
+//
+// Entry point for the virt machine.
+//
+// QEMU loads the ELF and jumps straight here, so there is no boot sector, no
+// mode transition and nothing to copy. The work is limited to giving the boot
+// core a stack and calling into C, which clears .bss for itself.
+//
+// Every core enters here, so all but the first are parked. Without that they
+// would each run the kernel, and two of them writing the same console and the
+// same command buffer is not a failure that looks like a concurrency bug when
+// you first see it.
 
 .section .text.boot
 .global _start

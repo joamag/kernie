@@ -1,5 +1,18 @@
-; isr.asm - interrupt service routine stubs
-; saves registers, calls C handler, restores, iretq
+; arch/x86_64/isr.asm
+;
+; Interrupt entry stubs, one per vector.
+;
+; The CPU pushes an error code for some exceptions and not for others, so the
+; stubs that cover the latter push a dummy one. That makes the stack identical
+; whichever vector was raised, which is what lets a single common path and a
+; single C structure describe both.
+;
+; The vector number is pushed next, since the entry point is the only place
+; that still knows which one it was.
+;
+; Alignment needs no correction here. Long mode aligns the stack pointer to
+; sixteen bytes before pushing its frame, and the pushes below land it back on
+; a boundary by the time the call is made.
 
 [bits 64]
 [extern isr_handler]

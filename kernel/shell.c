@@ -1,3 +1,24 @@
+/**
+ * kernel/shell.c
+ *
+ * Line buffered command shell.
+ *
+ * Runs entirely outside interrupt context, driven by input_poll from the idle
+ * loop, so a command is free to take as long as it needs to write its output.
+ *
+ * Commands are dispatched by a chain of comparisons rather than a table. With
+ * six of them the table would cost more to read than it saves, and the point
+ * at which that stops being true is obvious enough to act on when it arrives.
+ *
+ * Reboot and power off are delegated to the architecture, since one is a
+ * keyboard controller pulse and the other an ACPI write on x86-64, while both
+ * are PSCI calls on arm64.
+ *
+ * A line feed arriving straight after a carriage return is swallowed, so that
+ * a terminal configured to send the pair does not run a second, empty
+ * command.
+ */
+
 #include "kernel/shell.h"
 #include "kernel/console.h"
 #include "kernel/arch.h"
@@ -22,7 +43,7 @@ static void splash(void) {
           CONSOLE_BLUE);
     print("\n", CONSOLE_WHITE);
 
-    /* Folded-K symbol and wordmark, kept below 80 columns for VGA text mode. */
+    // Folded-K symbol and wordmark, kept below 80 columns for VGA text mode.
     print("        ||      ", CONSOLE_BLUE);
     print("//////      ", CONSOLE_CYAN);
     print("_  __ _____ ____  _   _ ___ _____\n", CONSOLE_WHITE);
@@ -116,7 +137,7 @@ static void execute(void) {
     cmd_buf[cmd_len] = 0;
 
     if (cmd_len == 0) {
-        /* empty command */
+        // empty command
     } else if (streq(cmd_buf, "help")) {
         cmd_help();
     } else if (streq(cmd_buf, "clear")) {
@@ -147,7 +168,7 @@ void shell_init(void) {
 }
 
 void shell_handle_char(char c) {
-    /* swallow the LF of a CRLF pair, it is not a second command */
+    // swallow the LF of a CRLF pair, it is not a second command
     if (c == '\n' && last_was_cr) {
         last_was_cr = 0;
         return;
@@ -161,7 +182,7 @@ void shell_handle_char(char c) {
     } else if (c == '\b' || c == 127) {
         if (cmd_len > 0) {
             cmd_len--;
-            /* move cursor back, overwrite with space, move back again */
+            // move cursor back, overwrite with space, move back again
             print("\b \b", CONSOLE_WHITE);
         }
     } else if (cmd_len < CMD_MAX - 1) {

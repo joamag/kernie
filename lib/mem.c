@@ -1,8 +1,26 @@
-#include "lib/mem.h"
+/**
+ * lib/mem.c
+ *
+ * Freestanding memcpy, memmove, memset and memcmp.
+ *
+ * These are not a convenience. The C standard lets an implementation emit
+ * calls to all four even under -ffreestanding, and GCC does so for struct
+ * assignments, large local array initialisers and any copy it decides not to
+ * inline. Without them the kernel fails to link, and the error points at the
+ * line that triggered the call rather than at anything obviously wrong.
+ *
+ * The loops are deliberately naive byte copies. Anything cleverer would want
+ * alignment handling that the arm64 target cannot rely on while its MMU is
+ * off, and the volumes involved here do not justify it. The build also passes
+ * -fno-tree-loop-distribute-patterns, without which GCC recognises the shape
+ * of these very loops and rewrites them into calls to themselves.
+ *
+ * memmove compares integer representations rather than the pointers
+ * themselves, because relational comparison of pointers into distinct objects
+ * is undefined, and distinct objects are exactly what its contract allows.
+ */
 
-/* GCC emits calls to these four even under -ffreestanding, for struct
-   assignments and any copy it decides not to inline, so the kernel has to
-   provide them itself */
+#include "lib/mem.h"
 
 void *memcpy(void *dst, const void *src, uint64_t n) {
     uint8_t *d = dst;
@@ -15,7 +33,7 @@ void *memmove(void *dst, const void *src, uint64_t n) {
     uint8_t *d = dst;
     const uint8_t *s = src;
 
-    /* copy backwards when the regions overlap the wrong way */
+    // copy backwards when the regions overlap the wrong way
     if ((uintptr_t)d > (uintptr_t)s) {
         d += n;
         s += n;

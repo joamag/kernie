@@ -1,3 +1,22 @@
+/**
+ * arch/x86_64/interrupts.c
+ *
+ * The C side of interrupt handling, entered from the stubs in isr.asm.
+ *
+ * InterruptFrame mirrors, field for field, what those stubs push, so the two
+ * have to be changed together. The stub table is static const, which keeps it
+ * in .rodata; as a local it compiled into a memcpy call that a freestanding
+ * kernel has nothing to link against.
+ *
+ * An exception halts rather than attempting to continue, because none of them
+ * are recoverable at this stage and continuing would only obscure where the
+ * fault came from.
+ *
+ * Vectors 48 through 255 are left unset. Cleared .bss leaves their present bit
+ * at zero, so an unexpected vector faults into the general protection handler
+ * rather than jumping somewhere arbitrary.
+ */
+
 #include "drivers/vga.h"
 #include "drivers/serial.h"
 #include "arch/x86_64/io.h"
@@ -5,7 +24,7 @@
 #include "drivers/keyboard.h"
 #include "kernel/input.h"
 
-/* ISR stubs defined in isr.asm */
+// ISR stubs defined in isr.asm
 extern void isr0(void);  extern void isr1(void);  extern void isr2(void);
 extern void isr3(void);  extern void isr4(void);  extern void isr5(void);
 extern void isr6(void);  extern void isr7(void);  extern void isr8(void);
@@ -42,12 +61,12 @@ typedef struct {
     uint64_t rip, cs, rflags, rsp, ss;
 } InterruptFrame;
 
-/* called from isr_common in isr.asm */
+// called from isr_common in isr.asm
 void isr_handler(InterruptFrame *frame) {
     uint64_t n = frame->int_no;
 
     if (n < 32) {
-        /* CPU exception */
+        // CPU exception
         const char *name = n < 22 ? exception_names[n] : "Unknown";
         serial_print("EXCEPTION: ");
         serial_print(name);
@@ -63,25 +82,25 @@ void isr_handler(InterruptFrame *frame) {
         vga_print(name, VGA_RED_ON_BLACK);
         vga_print("\n", VGA_RED_ON_BLACK);
 
-        /* halt on exception */
+        // halt on exception
         for (;;) __asm__ volatile ("hlt");
     } else if (n == 32) {
-        /* IRQ 0: timer tick */
+        // IRQ 0: timer tick
         tick_count++;
         pic_send_eoi(0);
     } else if (n == 33) {
-        /* IRQ 1: keyboard */
+        // IRQ 1: keyboard
         uint8_t scancode = inb(0x60);
         keyboard_handle(scancode);
         pic_send_eoi(1);
     } else if (n == 36) {
-        /* IRQ 4: serial COM1 input */
+        // IRQ 4: serial COM1 input
         int c;
         while ((c = serial_getchar()) >= 0)
             input_handle_char((char)c);
         pic_send_eoi(4);
     } else if (n >= 34 && n <= 47) {
-        /* other IRQs */
+        // other IRQs
         pic_send_eoi(n - 32);
     }
 }
@@ -104,13 +123,13 @@ void interrupts_init(void) {
 
     idt_load();
 
-    /* unmask IRQ 0 (timer), IRQ 1 (keyboard), IRQ 4 (COM1) */
+    // unmask IRQ 0 (timer), IRQ 1 (keyboard), IRQ 4 (COM1)
     outb(0x21, 0xEC);
     outb(0xA1, 0xFF);
 
-    /* enable serial receive interrupts on COM1 */
+    // enable serial receive interrupts on COM1
     outb(0x3F8 + 1, 0x01);
 
-    /* enable interrupts */
+    // enable interrupts
     __asm__ volatile ("sti");
 }

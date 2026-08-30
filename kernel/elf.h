@@ -1,3 +1,18 @@
+/**
+ * kernel/elf.h
+ *
+ * ELF64 structures and a loader skeleton.
+ *
+ * Nothing includes this yet. It is kept because the loader is the next
+ * substantial piece of work, and the structures are stable regardless of how
+ * the loading itself ends up being driven.
+ *
+ * The skeleton is not safe to use as it stands. It trusts every field of the
+ * header, so it will copy to whatever p_vaddr asks for, and it assumes those
+ * addresses are already mapped. Both have to be addressed before it is wired
+ * up to anything, along with validation of e_machine, e_type and p_align.
+ */
+
 #ifndef ELF_H
 #define ELF_H
 

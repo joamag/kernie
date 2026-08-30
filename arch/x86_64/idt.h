@@ -1,3 +1,9 @@
+/**
+ * arch/x86_64/idt.h
+ *
+ * Interrupt descriptor table entries and the 8259 PIC.
+ */
+
 #ifndef IDT_H
 #define IDT_H
 
@@ -6,7 +12,7 @@
 
 #define IDT_ENTRIES 256
 
-/* IDT gate descriptor (64-bit mode) */
+// IDT gate descriptor (64-bit mode)
 typedef struct {
     uint16_t offset_low;
     uint16_t selector;
