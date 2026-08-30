@@ -56,14 +56,16 @@ typedef void (*entry_fn)(void);
 static int load_elf(void *elf_data) {
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf_data;
 
-    if (*(uint32_t *)ehdr->e_ident != ELF_MAGIC)
+    if (*(uint32_t *)ehdr->e_ident != ELF_MAGIC) {
         return -1;
+    }
 
     for (int i = 0; i < ehdr->e_phnum; i++) {
         Elf64_Phdr *phdr = (Elf64_Phdr *)((uint8_t *)elf_data + ehdr->e_phoff + i * ehdr->e_phentsize);
 
-        if (phdr->p_type != PT_LOAD)
+        if (phdr->p_type != PT_LOAD) {
             continue;
+        }
 
         memcpy((void *)phdr->p_vaddr,
                (uint8_t *)elf_data + phdr->p_offset,

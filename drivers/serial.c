@@ -16,8 +16,9 @@
 
 void serial_print(const char *str) {
     while (*str) {
-        if (*str == '\n')
+        if (*str == '\n') {
             serial_putchar('\r');
+        }
         serial_putchar(*str++);
     }
 }

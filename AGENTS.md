@@ -156,6 +156,7 @@ Assembly and shell sources have no block comment syntax, so the file header ther
 
 - C sources use 4-space indentation, no tabs.
 - Braces follow K&R style, the opening brace on the same line as the statement.
+- Every control structure body is braced, including a body of a single statement and an empty one. There are no brace free `if`, `else`, `for` or `while` bodies in the tree, and a body never shares the line with its condition.
 - A space before the parenthesis in control structures: `if (condition)`, `for (...)`, `while (...)`.
 - Pointer declarations use right alignment: `const char *str`.
 - Comments follow the two forms described above, `/** */` to document and `//` inline, and explain why rather than what.

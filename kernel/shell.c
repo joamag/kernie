@@ -90,14 +90,18 @@ static void splash(void) {
 
 static int streq(const char *a, const char *b) {
     while (*a && *b) {
-        if (*a++ != *b++) return 0;
+        if (*a++ != *b++) {
+            return 0;
+        }
     }
     return *a == *b;
 }
 
 static int starts_with(const char *str, const char *prefix) {
     while (*prefix) {
-        if (*str++ != *prefix++) return 0;
+        if (*str++ != *prefix++) {
+            return 0;
+        }
     }
     return 1;
 }

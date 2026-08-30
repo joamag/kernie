@@ -25,7 +25,9 @@
 void *memcpy(void *dst, const void *src, uint64_t n) {
     uint8_t *d = dst;
     const uint8_t *s = src;
-    while (n--) *d++ = *s++;
+    while (n--) {
+        *d++ = *s++;
+    }
     return dst;
 }
 
@@ -37,9 +39,13 @@ void *memmove(void *dst, const void *src, uint64_t n) {
     if ((uintptr_t)d > (uintptr_t)s) {
         d += n;
         s += n;
-        while (n--) *--d = *--s;
+        while (n--) {
+            *--d = *--s;
+        }
     } else {
-        while (n--) *d++ = *s++;
+        while (n--) {
+            *d++ = *s++;
+        }
     }
 
     return dst;
@@ -47,7 +53,9 @@ void *memmove(void *dst, const void *src, uint64_t n) {
 
 void *memset(void *dst, int val, uint64_t n) {
     uint8_t *d = dst;
-    while (n--) *d++ = (uint8_t)val;
+    while (n--) {
+        *d++ = (uint8_t)val;
+    }
     return dst;
 }
 
@@ -56,8 +64,9 @@ int memcmp(const void *a, const void *b, uint64_t n) {
     const uint8_t *y = b;
 
     while (n--) {
-        if (*x != *y)
+        if (*x != *y) {
             return *x - *y;
+        }
         x++;
         y++;
     }

@@ -28,13 +28,15 @@ void serial_init(void) {
 }
 
 void serial_putchar(char c) {
-    while ((inb(SERIAL_COM1 + 5) & 0x20) == 0)
-        ;
+    while ((inb(SERIAL_COM1 + 5) & 0x20) == 0) {
+        // wait for the holding register to drain
+    }
     outb(SERIAL_COM1, c);
 }
 
 int serial_getchar(void) {
-    if ((inb(SERIAL_COM1 + 5) & 0x01) == 0)
+    if ((inb(SERIAL_COM1 + 5) & 0x01) == 0) {
         return -1;
+    }
     return inb(SERIAL_COM1);
 }

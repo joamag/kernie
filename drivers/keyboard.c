@@ -43,10 +43,12 @@ void keyboard_handle(uint8_t scancode) {
     // key release (bit 7 set)
     if (scancode & 0x80) {
         uint8_t released = scancode & 0x7F;
-        if (released == 0x2A)
+        if (released == 0x2A) {
             shift_left = 0;
-        else if (released == 0x36)
+        }
+        else if (released == 0x36) {
             shift_right = 0;
+        }
         return;
     }
 
@@ -60,13 +62,15 @@ void keyboard_handle(uint8_t scancode) {
         return;
     }
 
-    if (scancode >= 128)
+    if (scancode >= 128) {
         return;
+    }
 
     const char *map = (shift_left || shift_right) ? scancode_map_shift : scancode_map;
     char c = map[scancode];
-    if (c == 0)
+    if (c == 0) {
         return;
+    }
 
     input_handle_char(c);
 }

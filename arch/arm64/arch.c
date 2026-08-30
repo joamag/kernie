@@ -21,8 +21,9 @@ void arch_init(void) {
 
 void arch_idle(void) {
     int c = serial_getchar();
-    if (c >= 0)
+    if (c >= 0) {
         input_handle_char((char)c);
+    }
 }
 
 // the virt machine exposes PSCI through hvc when there is no secure world

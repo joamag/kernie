@@ -24,13 +24,15 @@ void serial_init(void) {
 }
 
 void serial_putchar(char c) {
-    while (*PL011_FR & FR_TXFF)
-        ;
+    while (*PL011_FR & FR_TXFF) {
+        // wait for the transmit fifo to drain
+    }
     *PL011_DR = (uint32_t)c;
 }
 
 int serial_getchar(void) {
-    if (*PL011_FR & FR_RXFE)
+    if (*PL011_FR & FR_RXFE) {
         return -1;
+    }
     return (int)(*PL011_DR & 0xFF);
 }

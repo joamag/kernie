@@ -83,7 +83,9 @@ void isr_handler(InterruptFrame *frame) {
         vga_print("\n", VGA_RED_ON_BLACK);
 
         // halt on exception
-        for (;;) __asm__ volatile ("hlt");
+        for (;;) {
+            __asm__ volatile ("hlt");
+        }
     } else if (n == 32) {
         // IRQ 0: timer tick
         tick_count++;
@@ -96,8 +98,9 @@ void isr_handler(InterruptFrame *frame) {
     } else if (n == 36) {
         // IRQ 4: serial COM1 input
         int c;
-        while ((c = serial_getchar()) >= 0)
+        while ((c = serial_getchar()) >= 0) {
             input_handle_char((char)c);
+        }
         pic_send_eoi(4);
     } else if (n >= 34 && n <= 47) {
         // other IRQs
@@ -118,8 +121,9 @@ void interrupts_init(void) {
 
     pic_remap();
 
-    for (int i = 0; i < 48; i++)
+    for (int i = 0; i < 48; i++) {
         idt_set_gate(i, (uint64_t)stubs[i]);
+    }
 
     idt_load();
 

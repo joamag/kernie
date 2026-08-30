@@ -33,8 +33,9 @@ void input_handle_char(char c) {
     int next = (input_head + 1) % INPUT_MAX;
 
     // drop the byte rather than overwrite one the shell has not read yet
-    if (next == input_tail)
+    if (next == input_tail) {
         return;
+    }
 
     input_buf[input_head] = c;
     input_head = next;
