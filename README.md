@@ -1,4 +1,6 @@
-# Kernie
+<h1 align="center">
+  <img src="res/kernie-logo.svg" alt="Kernie" width="520">
+</h1>
 
 A small x86-64 kernel written from scratch, with no external bootloader and no C library. A 512-byte BIOS boot sector brings the CPU from real mode into long mode, loads the kernel from disk, and hands control to C code that drives the VGA text buffer, the serial port, the PS/2 keyboard, and an interactive shell.
 
@@ -51,11 +53,27 @@ Or without a window, driving the kernel entirely over the serial port:
 qemu-system-x86_64 -drive format=raw,file=os.bin -nographic
 ```
 
-On boot the shell prints its banner and a prompt:
+On boot the shell prints a colorized ASCII splash and a prompt. The version and
+architecture are defined in `version.h`; the build date and time are embedded by
+the compiler on every build.
 
 ```text
-=== Kernie the Kernel ===
-Type 'help' for available commands.
+  --------------------------------------------------------------------------
+
+        ||      //////      _  __ _____ ____  _   _ ___ _____
+        ||    //////        | |/ /| ____|  _ \| \ | |_ _| ____|
+        ||<<                | ' / |  _| | |_) |  \| || ||  _|
+        ||    \\\\\\        | . \ | |___|  _ <| |\  || || |___
+        ||      \\\\\\      |_|\_\|_____|_| \_\_| \_|___|_____|
+
+               A tiny kernel with unreasonable ambitions.
+
+  --------------------------------------------------------------------------
+      VERSION  0.1.0-dev    ARCH  x86_64    BUILT  Aug 30 2026 10:28:30
+             [ VGA OK ]  [ SERIAL OK ]  [ SHELL READY ]
+  --------------------------------------------------------------------------
+
+  Type 'help' for available commands.
 
 >
 ```

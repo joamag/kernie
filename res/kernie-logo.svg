@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="320" viewBox="0 0 1000 320" role="img" aria-labelledby="title desc">
+  <title id="title">Kernie</title>
+  <desc id="desc">Kernie logo: a folded geometric K beside the uppercase Kernie wordmark.</desc>
+  <defs>
+    <linearGradient id="foldGradient" x1="54" y1="48" x2="262" y2="263" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#49E6A8"/>
+      <stop offset="0.5" stop-color="#20D7F2"/>
+      <stop offset="1" stop-color="#3E66F3"/>
+    </linearGradient>
+  </defs>
+  <path d="M55 55h50v205H55z" fill="#0B1020"/>
+  <path d="M105 153L207 55h64L162 161z" fill="url(#foldGradient)"/>
+  <path d="M105 168l59-57 109 149h-66z" fill="#7846E8"/>
+  <path d="M105 153l59-42 25 34-27 16z" fill="#9BF8E7" opacity="0.75"/>
+  <g fill="#0B1020" transform="translate(320 215) scale(0.15800000 -0.15800000)">
+    <path d="M275 443 514 754H756L457 397L784 0H530L275 327V0H79V754H275Z" transform="translate(0.000 0)"/>
+    <path d="M508 588H275V462H495V296H275V166H508V0H79V754H508Z" transform="translate(810.987 0)"/>
+    <path d="M275 417H312Q370 417 401.0 441.0Q432 465 432 510Q432 555 401.0 579.0Q370 603 312 603H275ZM706 0H462L275 290V0H79V754H384Q447 754 494.0 735.5Q541 717 571.5 685.0Q602 653 617.5 611.0Q633 569 633 521Q633 435 591.5 381.5Q550 328 469 309Z" transform="translate(1399.975 0)"/>
+    <path d="M79 0V754H275L637 293V754H832V0H637L275 461V0Z" transform="translate(2127.962 0)"/>
+    <path d="M275 754V0H79V754Z" transform="translate(3057.949 0)"/>
+    <path d="M508 588H275V462H495V296H275V166H508V0H79V754H508Z" transform="translate(3430.937 0)"/>
+  </g>
+</svg>

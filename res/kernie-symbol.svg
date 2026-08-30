@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
+  <title id="title">Kernie symbol</title>
+  <desc id="desc">A folded geometric K in navy, cyan, mint, blue, and violet.</desc>
+  <defs>
+    <linearGradient id="foldGradient" x1="54" y1="48" x2="262" y2="263" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#49E6A8"/>
+      <stop offset="0.5" stop-color="#20D7F2"/>
+      <stop offset="1" stop-color="#3E66F3"/>
+    </linearGradient>
+  </defs>
+  <path d="M55 55h50v205H55z" fill="#0B1020"/>
+  <path d="M105 153L207 55h64L162 161z" fill="url(#foldGradient)"/>
+  <path d="M105 168l59-57 109 149h-66z" fill="#7846E8"/>
+  <path d="M105 153l59-42 25 34-27 16z" fill="#9BF8E7" opacity="0.75"/>
+</svg>

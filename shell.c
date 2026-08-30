@@ -2,6 +2,7 @@
 #include "vga.h"
 #include "serial.h"
 #include "io.h"
+#include "version.h"
 
 #define CMD_MAX 256
 
@@ -16,6 +17,56 @@ static void print(const char *str, uint8_t color) {
 
 static void prompt(void) {
     print("> ", VGA_WHITE_ON_BLACK);
+}
+
+static void splash(void) {
+    print("  --------------------------------------------------------------------------\n",
+          VGA_BLUE_ON_BLACK);
+    print("\n", VGA_WHITE_ON_BLACK);
+
+    /* Folded-K symbol and wordmark, kept below 80 columns for VGA text mode. */
+    print("        ||      ", VGA_BLUE_ON_BLACK);
+    print("//////      ", VGA_CYAN_ON_BLACK);
+    print("_  __ _____ ____  _   _ ___ _____\n", VGA_WHITE_ON_BLACK);
+
+    print("        ||    ", VGA_BLUE_ON_BLACK);
+    print("//////        ", VGA_CYAN_ON_BLACK);
+    print("| |/ /| ____|  _ \\| \\ | |_ _| ____|\n", VGA_WHITE_ON_BLACK);
+
+    print("        ||", VGA_BLUE_ON_BLACK);
+    print("<<                ", VGA_CYAN_ON_BLACK);
+    print("| ' / |  _| | |_) |  \\| || ||  _|\n", VGA_WHITE_ON_BLACK);
+
+    print("        ||    ", VGA_BLUE_ON_BLACK);
+    print("\\\\\\\\\\\\        ", VGA_MAGENTA_ON_BLACK);
+    print("| . \\ | |___|  _ <| |\\  || || |___\n", VGA_WHITE_ON_BLACK);
+
+    print("        ||      ", VGA_BLUE_ON_BLACK);
+    print("\\\\\\\\\\\\      ", VGA_MAGENTA_ON_BLACK);
+    print("|_|\\_\\|_____|_| \\_\\_| \\_|___|_____|\n", VGA_WHITE_ON_BLACK);
+
+    print("\n", VGA_WHITE_ON_BLACK);
+    print("               A tiny kernel with unreasonable ambitions.\n",
+          VGA_GREEN_ON_BLACK);
+    print("\n", VGA_WHITE_ON_BLACK);
+    print("  --------------------------------------------------------------------------\n",
+          VGA_BLUE_ON_BLACK);
+
+    print("      VERSION  ", VGA_GRAY_ON_BLACK);
+    print(KERNIE_VERSION, VGA_YELLOW_ON_BLACK);
+    print("    ARCH  ", VGA_GRAY_ON_BLACK);
+    print(KERNIE_ARCH, VGA_CYAN_ON_BLACK);
+    print("    BUILT  ", VGA_GRAY_ON_BLACK);
+    print(KERNIE_BUILD_DATE, VGA_WHITE_ON_BLACK);
+    print(" ", VGA_WHITE_ON_BLACK);
+    print(KERNIE_BUILD_TIME, VGA_WHITE_ON_BLACK);
+    print("\n", VGA_WHITE_ON_BLACK);
+
+    print("             [ VGA OK ]  [ SERIAL OK ]  [ SHELL READY ]\n",
+          VGA_GREEN_ON_BLACK);
+    print("  --------------------------------------------------------------------------\n",
+          VGA_BLUE_ON_BLACK);
+    print("\n", VGA_WHITE_ON_BLACK);
 }
 
 static int streq(const char *a, const char *b) {
@@ -99,8 +150,8 @@ static void execute(void) {
 }
 
 void shell_init(void) {
-    print("=== Kernie the Kernel ===\n", VGA_GREEN_ON_BLACK);
-    print("Type 'help' for available commands.\n\n", VGA_WHITE_ON_BLACK);
+    splash();
+    print("  Type 'help' for available commands.\n\n", VGA_WHITE_ON_BLACK);
     prompt();
 }
 
