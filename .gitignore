@@ -1,4 +1,7 @@
 *.bin
 *.elf
 *.o
+
+.DS_Store
+
 build/
