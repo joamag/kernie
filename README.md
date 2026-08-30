@@ -2,18 +2,34 @@
   <img src="res/kernie-logo.svg" alt="Kernie" width="520">
 </h1>
 
-A small kernel written from scratch, targeting x86-64 and arm64, with no external bootloader and no C library. A 512-byte BIOS boot sector brings the CPU from real mode into long mode, loads the kernel from disk, and hands control to C code that drives the VGA text buffer, the serial port, the PS/2 keyboard, and an interactive shell.
+A small kernel written from scratch, targeting x86-64 and arm64, with no external bootloader and no C library. Everything above the architecture layer is shared, including the shell, the input queue and the freestanding helpers.
+
+On x86-64 a 512-byte BIOS boot sector brings the CPU from real mode into long mode, loads the kernel from disk, and hands control to C code driving the VGA text buffer, the serial port and a PS/2 keyboard. On arm64 QEMU loads `kernel.elf` on the `virt` machine and jumps straight to it, with a PL011 UART as the only console and input device.
 
 ## Features
+
+Shared by both targets:
+
+* Line-buffered interactive shell with backspace support
+* Serial console output, with input queued in a ring buffer and drained from the idle loop
+* Freestanding `memcpy`, `memmove`, `memset` and `memcmp`
+* A cleared `.bss` and a console and architecture layer that keeps `kernel/` portable
+
+x86-64 only:
 
 * 512-byte MBR bootloader that enters 64-bit long mode
 * Identity-mapped paging for the first 4MB using 2MB pages
 * Interrupt handling with a full IDT, remapped PIC, and stubs for exceptions 0-31 and IRQs 0-15
 * CPU exception reporting to both VGA and serial, with the faulting vector and RIP
 * VGA 80x25 text output with scrolling
-* Serial COM1 output, plus interrupt-driven serial input so the kernel is usable over `-nographic`
+* Interrupt-driven serial input on IRQ 4, so the kernel is usable over `-nographic`
 * PS/2 keyboard driver translating scan code set 1 to ASCII, with shift support
-* Line-buffered interactive shell with backspace support
+
+arm64 only:
+
+* Boots as an ELF on the QEMU `virt` machine, parking secondary cores
+* PL011 UART console, with input polled from the idle loop since there is no GIC yet
+* Reboot and power off through PSCI
 
 ## Requirements
 
@@ -30,7 +46,7 @@ brew install aarch64-elf-gcc aarch64-elf-binutils   # for the arm64 target
 
 # Debian and Ubuntu
 sudo apt install nasm qemu-system-x86 qemu-system-arm build-essential
-sudo apt install gcc-aarch64-linux-gnu              # for the arm64 target
+sudo apt install gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu   # arm64
 ```
 
 ## Building

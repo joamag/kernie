@@ -23,8 +23,15 @@ x86_64)
     ARCHFLAGS="-mno-red-zone -mgeneral-regs-only -fno-pic -m64"
     ;;
 arm64)
-    CC="${CC:-aarch64-elf-gcc}"
-    LD="${LD:-aarch64-elf-ld}"
+    # prefer the bare metal toolchain, fall back to the Debian and Ubuntu
+    # gcc-aarch64-linux-gnu one, which works fine for freestanding code
+    if command -v aarch64-elf-gcc > /dev/null && command -v aarch64-elf-ld > /dev/null; then
+        CC="${CC:-aarch64-elf-gcc}"
+        LD="${LD:-aarch64-elf-ld}"
+    else
+        CC="${CC:-aarch64-linux-gnu-gcc}"
+        LD="${LD:-aarch64-linux-gnu-ld}"
+    fi
     ARCH_SRC="arch/arm64/console.c arch/arm64/arch.c drivers/uart_pl011.c"
     ARCHFLAGS="-mgeneral-regs-only -mstrict-align -fno-pic"
     ;;
