@@ -16,8 +16,14 @@
 
 _start:
     // park every secondary core, only cpu 0 continues
+    //
+    // all four affinity fields are compared, not just the low one, because a
+    // clustered topology gives the first core of every cluster an Aff0 of zero
     mrs     x0, mpidr_el1
-    and     x0, x0, #0xFF
+    movz    x1, #0xFFFF
+    movk    x1, #0x00FF, lsl #16
+    movk    x1, #0x00FF, lsl #32
+    and     x0, x0, x1
     cbnz    x0, park
 
     ldr     x0, =__stack_top

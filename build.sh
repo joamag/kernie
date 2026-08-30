@@ -105,7 +105,7 @@ for src in $COMMON_SRC $ARCH_SRC; do
     obj="$OBJDIR/$(basename "${src%.c}").o"
     # CFLAGS has to split into separate arguments
     # shellcheck disable=SC2086
-    $CC $CFLAGS -o "$obj" "$src"
+    $CC $CFLAGS -DKERNIE_ARCH="\"$ARCH\"" -o "$obj" "$src"
     OBJS="$OBJS $obj"
 done
 

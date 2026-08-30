@@ -220,11 +220,43 @@ fi
 expect_in "the shell still works with two cpus" "two cpus" "$GUEST_OUT"
 QEMU_EXTRA=""
 
+# a smoke test of a topology the other cases never reach, not a check of the
+# affinity masking itself, which QEMU cannot exercise because it never gives a
+# secondary core an Aff0 of zero whatever the declared topology
+QEMU_EXTRA="-smp 4,clusters=2,cores=2,threads=1" run_guest arm64 "echo clustered"
+banners=$(printf '%s' "$GUEST_OUT" | grep -c 'unreasonable ambitions')
+if [ "$banners" -eq 1 ]; then
+    ok "a clustered topology boots one kernel"
+else
+    no "a clustered topology boots one kernel" "saw $banners banners, expected 1"
+fi
+expect_in "the shell still works in a clustered topology" "clustered" "$GUEST_OUT"
+QEMU_EXTRA=""
+
 run_guest arm64 "shutdown"
 if [ "$GUEST_ALIVE" = "no" ]; then
     ok "shutdown powers off arm64"
 else
     no "shutdown powers off arm64" "qemu was still running"
+fi
+
+echo ""
+echo "=== Configuration ==="
+
+# a failing suite has to fail the job, and the default shell reports the status
+# of tee rather than of the pipeline, which would hide every failure above
+expect_in "the test workflow forces a pipefail shell" "shell: bash" \
+    "$(sed -n '/- name: Run tests/,/run:/p' .github/workflows/main.yml)"
+
+# the architecture label comes from the build, so that adding a target never
+# means editing anything under kernel/
+expect_not_in "version.h carries no architecture conditional" "__aarch64__" "$(cat kernel/version.h)"
+expect_in "the build supplies the architecture label" "-DKERNIE_ARCH" "$(cat build.sh)"
+
+if grep -rqE '#(if |ifdef |elif )' kernel lib --include='*.c' --include='*.h'; then
+    no "kernel and lib carry no conditional compilation"
+else
+    ok "kernel and lib carry no conditional compilation"
 fi
 
 echo ""
