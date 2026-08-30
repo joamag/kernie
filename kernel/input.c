@@ -1,5 +1,5 @@
-#include "input.h"
-#include "shell.h"
+#include "kernel/input.h"
+#include "kernel/shell.h"
 
 #define INPUT_MAX 256
 

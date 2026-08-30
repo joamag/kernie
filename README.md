@@ -102,19 +102,31 @@ the compiler on every build.
 
 ## Layout
 
-| File                           | Description                                           |
-| ------------------------------ | ----------------------------------------------------- |
-| `boot.asm`                     | boot sector, real mode to long mode, loads the kernel |
-| `kernel.ld`                    | linker script placing the flat binary at `0x100000`   |
-| `kernel.c`                     | `kernel_main`, brings up the subsystems and idles     |
-| `isr.asm`                      | interrupt stubs, save registers, call C, `iretq`      |
-| `idt.c`, `idt.h`               | IDT gate descriptors, PIC remapping, end of interrupt |
-| `interrupts.c`, `interrupts.h` | IDT setup and the C interrupt dispatcher              |
-| `io.h`                         | `inb` and `outb` port helpers                         |
-| `vga.c`, `vga.h`               | VGA 80x25 text output                                 |
-| `serial.c`, `serial.h`         | COM1 output                                           |
-| `keyboard.c`, `keyboard.h`     | PS/2 scan code set 1 to ASCII translation             |
-| `input.c`, `input.h`           | common sink for keyboard and serial input             |
-| `shell.c`, `shell.h`           | line-buffered command shell                           |
-| `elf.h`                        | ELF64 structures, not wired up yet                    |
-| `build.sh`                     | build script                                          |
+Sources are grouped by what they depend on, so that portable code stays free of x86 specifics as the kernel grows.
+
+| Directory | Contents |
+| --- | --- |
+| `arch/x86_64/` | everything x86-64 specific, including the linker script |
+| `kernel/` | core kernel and the shell |
+| `drivers/` | hardware drivers |
+| `lib/` | freestanding helpers shared across the kernel |
+| `res/` | branding assets |
+
+| File | Description |
+| --- | --- |
+| `arch/x86_64/boot.asm` | boot sector, real mode to long mode, loads the kernel |
+| `arch/x86_64/isr.asm` | interrupt stubs, save registers, call C, `iretq` |
+| `arch/x86_64/idt.c`, `idt.h` | IDT gate descriptors, PIC remapping, end of interrupt |
+| `arch/x86_64/interrupts.c`, `interrupts.h` | IDT setup and the C interrupt dispatcher |
+| `arch/x86_64/io.h` | `inb`, `outb` and `outw` port helpers |
+| `arch/x86_64/kernel.ld` | linker script placing the flat binary at `0x100000` |
+| `kernel/kernel.c` | `kernel_main`, brings up the subsystems and idles |
+| `kernel/shell.c`, `shell.h` | line-buffered command shell |
+| `kernel/input.c`, `input.h` | ring buffer sink for keyboard and serial input |
+| `kernel/version.h` | version, architecture and build stamp |
+| `kernel/elf.h` | ELF64 structures, not wired up yet |
+| `drivers/vga.c`, `vga.h` | VGA 80x25 text output |
+| `drivers/serial.c`, `serial.h` | COM1 output |
+| `drivers/keyboard.c`, `keyboard.h` | PS/2 scan code set 1 to ASCII translation |
+| `lib/mem.c`, `mem.h` | freestanding `memcpy`, `memmove`, `memset` and `memcmp` |
+| `build.sh` | build script |

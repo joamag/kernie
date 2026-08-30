@@ -2,7 +2,7 @@
 #define IDT_H
 
 #include <stdint.h>
-#include "io.h"
+#include "arch/x86_64/io.h"
 
 #define IDT_ENTRIES 256
 

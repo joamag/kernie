@@ -13,12 +13,12 @@ fi
 
 echo "=== Step 1: Assemble bootloader ==="
 echo "  Real mode entry point, sets up long mode, loads kernel from disk"
-nasm -f bin boot.asm -o boot.bin
+nasm -f bin arch/x86_64/boot.asm -o boot.bin
 
 echo ""
 echo "=== Step 2: Assemble ISR stubs ==="
 echo "  Interrupt service routine entry points (save regs, call C, iretq)"
-nasm -f elf64 isr.asm -o isr.o
+nasm -f elf64 arch/x86_64/isr.asm -o isr.o
 
 echo ""
 echo "=== Step 3: Compile kernel C code ==="
@@ -27,8 +27,9 @@ echo "  -fno-stack-protector : no __stack_chk_fail (doesn't exist here)"
 echo "  -mno-red-zone        : unsafe in kernel, interrupts would clobber it"
 echo "  -mgeneral-regs-only  : no SSE/x87, CR4.OSFXSR is never set so they #UD"
 echo "  -fno-pic             : no position-independent code overhead"
+echo "  -I.                  : headers are included by path from the root"
 echo "  -c                   : compile only, don't link yet"
-CFLAGS="-ffreestanding -fno-stack-protector -mno-red-zone -mgeneral-regs-only -fno-pic -m64 -c"
+CFLAGS="-ffreestanding -fno-stack-protector -mno-red-zone -mgeneral-regs-only -fno-pic -m64 -I. -c"
 
 # GCC's loop idiom pass can rewrite the mem.c byte loops into calls to
 # themselves, clang has no such pass and rejects the flag outright
@@ -36,21 +37,21 @@ if $CC -fno-tree-loop-distribute-patterns -E - < /dev/null > /dev/null 2>&1; the
     echo "  -fno-tree-loop-distribute-patterns : no self calls in mem.c"
     CFLAGS="$CFLAGS -fno-tree-loop-distribute-patterns"
 fi
-$CC $CFLAGS -o kernel.o kernel.c
-$CC $CFLAGS -o vga.o vga.c
-$CC $CFLAGS -o serial.o serial.c
-$CC $CFLAGS -o idt.o idt.c
-$CC $CFLAGS -o input.o input.c
-$CC $CFLAGS -o keyboard.o keyboard.c
-$CC $CFLAGS -o shell.o shell.c
-$CC $CFLAGS -o interrupts.o interrupts.c
-$CC $CFLAGS -o mem.o mem.c
+$CC $CFLAGS -o kernel.o kernel/kernel.c
+$CC $CFLAGS -o vga.o drivers/vga.c
+$CC $CFLAGS -o serial.o drivers/serial.c
+$CC $CFLAGS -o idt.o arch/x86_64/idt.c
+$CC $CFLAGS -o input.o kernel/input.c
+$CC $CFLAGS -o keyboard.o drivers/keyboard.c
+$CC $CFLAGS -o shell.o kernel/shell.c
+$CC $CFLAGS -o interrupts.o arch/x86_64/interrupts.c
+$CC $CFLAGS -o mem.o lib/mem.c
 
 echo ""
 echo "=== Step 4: Link kernel into flat binary ==="
-echo "  -T kernel.ld    : use our linker script (load at 0x100000)"
+echo "  -T arch/x86_64/kernel.ld : use our linker script (load at 0x100000)"
 echo "  --oformat binary : raw flat binary, no ELF headers"
-$LD -T kernel.ld -o kernel.bin \
+$LD -T arch/x86_64/kernel.ld -o kernel.bin \
     kernel.o vga.o serial.o idt.o input.o keyboard.o shell.o interrupts.o mem.o isr.o \
     --oformat binary
 

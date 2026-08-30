@@ -1,4 +1,4 @@
-#include "mem.h"
+#include "lib/mem.h"
 
 /* GCC emits calls to these four even under -ffreestanding, for struct
    assignments and any copy it decides not to inline, so the kernel has to

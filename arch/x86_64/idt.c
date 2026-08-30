@@ -1,4 +1,4 @@
-#include "idt.h"
+#include "arch/x86_64/idt.h"
 
 static IdtEntry idt[IDT_ENTRIES];
 static IdtPtr   idtr;
