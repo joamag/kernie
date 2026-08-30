@@ -51,7 +51,7 @@ Networking is full of timeouts, so this is a networking prerequisite rather than
 
 ## Phase 4: testing
 
-- [ ] Commit the QEMU harness as `test.sh`, covering boot, PS/2 keyboard input, CRLF handling and a paste burst
+- [x] Commit the QEMU harness as `test.sh`, covering toolchain selection, both builds and the shell on each target
 - [ ] GitHub Actions workflow running `build.sh` on ubuntu-latest
 - [ ] Host compiled unit tests for logic that does not need a kernel, such as checksums, the ARP table and the TCP state machine
 
