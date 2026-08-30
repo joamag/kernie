@@ -1,8 +1,8 @@
-#include "shell.h"
-#include "vga.h"
-#include "serial.h"
-#include "io.h"
-#include "version.h"
+#include "kernel/shell.h"
+#include "drivers/vga.h"
+#include "drivers/serial.h"
+#include "arch/x86_64/io.h"
+#include "kernel/version.h"
 
 #define CMD_MAX 256
 

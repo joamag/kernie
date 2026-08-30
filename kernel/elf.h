@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "mem.h"
+#include "lib/mem.h"
 
 typedef struct {
     uint8_t  e_ident[16];

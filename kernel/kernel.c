@@ -1,9 +1,9 @@
-#include "vga.h"
-#include "serial.h"
-#include "interrupts.h"
-#include "shell.h"
-#include "input.h"
-#include "mem.h"
+#include "drivers/vga.h"
+#include "drivers/serial.h"
+#include "arch/x86_64/interrupts.h"
+#include "kernel/shell.h"
+#include "kernel/input.h"
+#include "lib/mem.h"
 
 /* placed by kernel.ld, the flat binary carries no .bss so it holds whatever
    was in memory until we clear it */

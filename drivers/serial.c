@@ -1,5 +1,5 @@
-#include "serial.h"
-#include "io.h"
+#include "drivers/serial.h"
+#include "arch/x86_64/io.h"
 
 #define SERIAL_COM1 0x3F8
 

@@ -1,9 +1,9 @@
-#include "vga.h"
-#include "serial.h"
-#include "io.h"
-#include "idt.h"
-#include "keyboard.h"
-#include "input.h"
+#include "drivers/vga.h"
+#include "drivers/serial.h"
+#include "arch/x86_64/io.h"
+#include "arch/x86_64/idt.h"
+#include "drivers/keyboard.h"
+#include "kernel/input.h"
 
 /* ISR stubs defined in isr.asm */
 extern void isr0(void);  extern void isr1(void);  extern void isr2(void);

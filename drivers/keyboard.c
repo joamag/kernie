@@ -1,5 +1,5 @@
-#include "keyboard.h"
-#include "input.h"
+#include "drivers/keyboard.h"
+#include "kernel/input.h"
 
 /* US QWERTY scancode set 1 -> ASCII (lowercase) */
 static const char scancode_map[128] = {
