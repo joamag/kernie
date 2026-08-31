@@ -22,14 +22,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, arm64]
+        arch: [x86_64, arm64, riscv64]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y nasm gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+          sudo apt-get install -y nasm gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu
       - name: Build Kernie
         run: |
           ARCH=${{ matrix.arch }} ./build.sh
@@ -61,13 +62,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [x86_64, arm64]
+        arch: [x86_64, arm64, riscv64]
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
       - name: Install dependencies
         run: |
-          brew install nasm x86_64-elf-gcc x86_64-elf-binutils aarch64-elf-gcc aarch64-elf-binutils
+          brew install nasm x86_64-elf-gcc x86_64-elf-binutils aarch64-elf-gcc aarch64-elf-binutils \
+            riscv64-elf-gcc riscv64-elf-binutils
       - name: Build Kernie
         run: |
           ARCH=${{ matrix.arch }} ./build.sh
@@ -98,7 +100,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y nasm gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-            qemu-system-x86 qemu-system-arm
+            gcc-riscv64-linux-gnu binutils-riscv64-linux-gnu \
+            qemu-system-x86 qemu-system-arm qemu-system-misc
       - name: Run tests
         shell: bash
         env:

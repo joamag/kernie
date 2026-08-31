@@ -46,8 +46,21 @@ arm64)
     ARCH_SRC="arch/arm64/console.c arch/arm64/arch.c drivers/uart_pl011.c"
     ARCHFLAGS="-mgeneral-regs-only -mstrict-align -fno-pic"
     ;;
+riscv64)
+    # prefer the bare metal toolchain, fall back to the Debian and Ubuntu
+    # gcc-riscv64-linux-gnu one, which works fine for freestanding code
+    if command -v riscv64-elf-gcc > /dev/null && command -v riscv64-elf-ld > /dev/null; then
+        CC="${CC:-riscv64-elf-gcc}"
+        LD="${LD:-riscv64-elf-ld}"
+    else
+        CC="${CC:-riscv64-linux-gnu-gcc}"
+        LD="${LD:-riscv64-linux-gnu-ld}"
+    fi
+    ARCH_SRC="arch/riscv64/console.c arch/riscv64/arch.c drivers/uart_ns16550.c"
+    ARCHFLAGS="-march=rv64imac -mabi=lp64 -mcmodel=medany -fno-pic"
+    ;;
 *)
-    echo "ERROR: unsupported ARCH '$ARCH', expected x86_64 or arm64"
+    echo "ERROR: unsupported ARCH '$ARCH', expected x86_64, arm64 or riscv64"
     exit 1
     ;;
 esac
@@ -73,7 +86,9 @@ if [ "$ARCH" = "x86_64" ]; then
     ASM_OBJ="$OBJDIR/isr.o"
 else
     echo "  QEMU loads the ELF and jumps straight to _start, no real mode dance"
-    $CC -c arch/arm64/boot.S -o "$OBJDIR/boot.o"
+    # ARCHFLAGS has to split into separate arguments
+    # shellcheck disable=SC2086
+    $CC $ARCHFLAGS -c "arch/$ARCH/boot.S" -o "$OBJDIR/boot.o"
     echo ""
     echo "=== Step 2: Assemble ISR stubs ==="
     echo "  Skipped, the arm64 port has no vector table yet"
@@ -84,7 +99,12 @@ echo ""
 echo "=== Step 3: Compile kernel C code ==="
 echo "  -ffreestanding       : no stdlib, we ARE the OS"
 echo "  -fno-stack-protector : no __stack_chk_fail (doesn't exist here)"
-echo "  -mgeneral-regs-only  : no SIMD, the FPU is never enabled"
+if [ "$ARCH" = "riscv64" ]; then
+    echo "  -march=rv64imac      : no F or D extension, so no floating point"
+    echo "  -mcmodel=medany      : the kernel is linked well above the low 2GB"
+else
+    echo "  -mgeneral-regs-only  : no SIMD, the FPU is never enabled"
+fi
 if [ "$ARCH" = "arm64" ]; then
     echo "  -mstrict-align       : the MMU is off, so memory is Device type and"
     echo "                         unaligned accesses raise an alignment fault"
@@ -128,10 +148,10 @@ if [ "$ARCH" = "x86_64" ]; then
         exit 1
     fi
 else
-    echo "  -T arch/arm64/kernel.ld : linker script, load at 0x40080000"
+    echo "  -T arch/$ARCH/kernel.ld : linker script for the target"
     # OBJS has to split into separate arguments
     # shellcheck disable=SC2086
-    $LD -T arch/arm64/kernel.ld -o kernel.elf $OBJS
+    $LD -T "arch/$ARCH/kernel.ld" -o kernel.elf $OBJS
     KERNEL_SIZE=$(( $(wc -c < kernel.elf) ))
 fi
 
@@ -172,5 +192,9 @@ else
     echo "Kernel:     $KERNEL_SIZE bytes (kernel.elf)"
     echo ""
     echo "Run with:"
-    echo "  qemu-system-aarch64 -machine virt -cpu cortex-a72 -kernel kernel.elf -nographic"
+    if [ "$ARCH" = "riscv64" ]; then
+        echo "  qemu-system-riscv64 -machine virt -bios none -kernel kernel.elf -nographic"
+    else
+        echo "  qemu-system-aarch64 -machine virt -cpu cortex-a72 -kernel kernel.elf -nographic"
+    fi
 fi

@@ -71,15 +71,23 @@ run_guest () {
     fifo="$(mktemp -u)"
     mkfifo "$fifo"
 
-    if [ "$arch" = "x86_64" ]; then
+    case "$arch" in
+    x86_64)
         qemu-system-x86_64 -drive format=raw,file=os.bin \
             -display none -serial stdio < "$fifo" > "$log" 2>&1 &
-    else
+        ;;
+    arm64)
         # QEMU_EXTRA has to split into separate arguments
         # shellcheck disable=SC2086
         qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 128 $QEMU_EXTRA \
             -kernel kernel.elf -display none -serial stdio < "$fifo" > "$log" 2>&1 &
-    fi
+        ;;
+    riscv64)
+        # shellcheck disable=SC2086
+        qemu-system-riscv64 -machine virt -bios none -m 128 $QEMU_EXTRA \
+            -kernel kernel.elf -display none -serial stdio < "$fifo" > "$log" 2>&1 &
+        ;;
+    esac
     qpid=$!
     exec 3> "$fifo"
 
@@ -122,6 +130,14 @@ expect_in "arm64 honours a CC override" "CC:   my-own-cc" "$out"
 out=$(ARCH=arm64 LD=my-own-ld ./build.sh 2>&1)
 expect_in "arm64 honours an LD override" "LD:   my-own-ld" "$out"
 
+out=$(PATH="/usr/bin:/bin" ARCH=riscv64 ./build.sh 2>&1)
+expect_in "riscv64 falls back to the Debian toolchain" "CC:   riscv64-linux-gnu-gcc" "$out"
+
+stubs=$(stub_dir riscv64-elf-gcc riscv64-elf-ld)
+out=$(PATH="$stubs:/usr/bin:/bin" ARCH=riscv64 ./build.sh 2>&1)
+expect_in "riscv64 prefers the bare metal toolchain" "CC:   riscv64-elf-gcc" "$out"
+rm -rf "$stubs"
+
 stubs=$(stub_dir x86_64-elf-gcc x86_64-elf-ld nasm)
 out=$(PATH="$stubs:/usr/bin:/bin" ARCH=x86_64 ./build.sh 2>&1)
 expect_in "x86_64 prefers the bare metal toolchain" "CC:   x86_64-elf-gcc" "$out"
@@ -152,6 +168,14 @@ else
     no "arm64 builds" "$(echo "$out" | tail -3)"
 fi
 
+if out=$(ARCH=riscv64 ./build.sh 2>&1); then
+    ok "riscv64 builds"
+    expect_in "riscv64 leaves out the float extensions" "-march=rv64imac" "$out"
+else
+    no "riscv64 builds" "$(echo "$out" | tail -3)"
+fi
+
+./build.sh > /dev/null 2>&1
 if [ -f os.bin ] && [ "$(wc -c < os.bin | tr -d ' ')" = "32768" ]; then
     ok "the x86_64 image is padded to 32K"
 else
@@ -238,6 +262,46 @@ if [ "$GUEST_ALIVE" = "no" ]; then
     ok "shutdown powers off arm64"
 else
     no "shutdown powers off arm64" "qemu was still running"
+fi
+
+echo ""
+echo "=== Shell on riscv64 ==="
+
+ARCH=riscv64 ./build.sh > /dev/null 2>&1
+run_guest riscv64 "help" "echo hello from riscv64" "bogus"
+expect_in "the splash names the architecture" "ARCH  riscv64" "$GUEST_OUT"
+expect_in "help lists every command" "shutdown   - power off the machine" "$GUEST_OUT"
+expect_in "echo prints its argument" "hello from riscv64" "$GUEST_OUT"
+expect_in "an unknown command is reported" "bogus: command not found" "$GUEST_OUT"
+
+run_guest riscv64 "tick"
+expect_in "tick reports the stub counter" "Ticks: 0x0000000000000000" "$GUEST_OUT"
+
+run_guest riscv64 "reboot" "echo back up"
+banners=$(printf '%s' "$GUEST_OUT" | grep -c 'unreasonable ambitions')
+if [ "$banners" -ge 2 ]; then
+    ok "reboot restarts the riscv64 guest"
+else
+    no "reboot restarts the riscv64 guest" "saw $banners banners, expected 2"
+fi
+
+# every hart enters _start, so all but the boot one have to be parked before
+# they reach the shared console and command buffer
+QEMU_EXTRA="-smp 4" run_guest riscv64 "echo four harts"
+banners=$(printf '%s' "$GUEST_OUT" | grep -c 'unreasonable ambitions')
+if [ "$banners" -eq 1 ]; then
+    ok "secondary harts are parked"
+else
+    no "secondary harts are parked" "saw $banners banners, expected 1"
+fi
+expect_in "the shell still works with four harts" "four harts" "$GUEST_OUT"
+QEMU_EXTRA=""
+
+run_guest riscv64 "shutdown"
+if [ "$GUEST_ALIVE" = "no" ]; then
+    ok "shutdown powers off riscv64"
+else
+    no "shutdown powers off riscv64" "qemu was still running"
 fi
 
 echo ""
