@@ -1,0 +1,124 @@
+name: Main Workflow
+on:
+  - push
+  - workflow_dispatch
+jobs:
+  build-lint:
+    name: Build Lint
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+      - name: Run shellcheck
+        run: |
+          shellcheck build.sh test.sh
+  build-linux:
+    name: Build Linux
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+      - name: Build Kernie
+        run: |
+          ARCH=${{ matrix.arch }} ./build.sh
+      - name: Report size
+        if: always()
+        run: |
+          {
+            echo "### Kernie ${{ matrix.arch }}"
+            echo ""
+            echo "| Artifact | Bytes |"
+            echo "| --- | --- |"
+            for file in boot.bin kernel.bin kernel.elf os.bin; do
+              if [ -f "$file" ]; then
+                printf "| \`%s\` | %s |\n" "$file" "$(wc -c < "$file" | tr -d ' ')"
+              fi
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: kernie-${{ matrix.arch }}
+          path: |
+            os.bin
+            kernel.elf
+          if-no-files-found: ignore
+  build-macos:
+    name: Build macOS
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, arm64]
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: |
+          brew install nasm x86_64-elf-gcc x86_64-elf-binutils aarch64-elf-gcc aarch64-elf-binutils
+      - name: Build Kernie
+        run: |
+          ARCH=${{ matrix.arch }} ./build.sh
+  build-toolchain:
+    name: Build Toolchain
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        gcc-version: [12, 13, 14]
+    runs-on: ubuntu-latest
+    container: gcc:${{ matrix.gcc-version }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y -q nasm
+      - name: Build Kernie
+        run: |
+          ./build.sh
+  build-test:
+    name: Build Test
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            qemu-system-x86 qemu-system-arm
+      - name: Run tests
+        shell: bash
+        env:
+          BOOT_WAIT: 8
+          CMD_WAIT: 2
+        run: |
+          ./test.sh | tee test-results.txt
+      - name: Report tests
+        if: always()
+        run: |
+          {
+            echo "### Tests"
+            echo ""
+            echo '```'
+            cat test-results.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results
+          path: test-results.txt
+          if-no-files-found: ignore

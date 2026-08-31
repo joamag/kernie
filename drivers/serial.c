@@ -1,28 +1,24 @@
+/**
+ * drivers/serial.c
+ *
+ * UART output formatting, shared by every port.
+ *
+ * Only the three hardware primitives differ between a 16550 behind x86-64 port
+ * I/O and a PL011 behind memory mapped registers, so the newline translation
+ * and the hexadecimal printing live here once rather than in each driver.
+ *
+ * serial_print translates a line feed into a carriage return pair, because a
+ * serial terminal will otherwise leave the cursor in the column it was in and
+ * produce a staircase.
+ */
+
 #include "drivers/serial.h"
-#include "arch/x86_64/io.h"
-
-#define SERIAL_COM1 0x3F8
-
-void serial_init(void) {
-    outb(SERIAL_COM1 + 1, 0x00);
-    outb(SERIAL_COM1 + 3, 0x80);
-    outb(SERIAL_COM1 + 0, 0x01);
-    outb(SERIAL_COM1 + 1, 0x00);
-    outb(SERIAL_COM1 + 3, 0x03);
-    outb(SERIAL_COM1 + 2, 0xC7);
-    outb(SERIAL_COM1 + 4, 0x0B);
-}
-
-void serial_putchar(char c) {
-    while ((inb(SERIAL_COM1 + 5) & 0x20) == 0)
-        ;
-    outb(SERIAL_COM1, c);
-}
 
 void serial_print(const char *str) {
     while (*str) {
-        if (*str == '\n')
+        if (*str == '\n') {
             serial_putchar('\r');
+        }
         serial_putchar(*str++);
     }
 }

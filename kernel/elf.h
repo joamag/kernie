@@ -1,3 +1,18 @@
+/**
+ * kernel/elf.h
+ *
+ * ELF64 structures and a loader skeleton.
+ *
+ * Nothing includes this yet. It is kept because the loader is the next
+ * substantial piece of work, and the structures are stable regardless of how
+ * the loading itself ends up being driven.
+ *
+ * The skeleton is not safe to use as it stands. It trusts every field of the
+ * header, so it will copy to whatever p_vaddr asks for, and it assumes those
+ * addresses are already mapped. Both have to be addressed before it is wired
+ * up to anything, along with validation of e_machine, e_type and p_align.
+ */
+
 #ifndef ELF_H
 #define ELF_H
 
@@ -41,14 +56,16 @@ typedef void (*entry_fn)(void);
 static int load_elf(void *elf_data) {
     Elf64_Ehdr *ehdr = (Elf64_Ehdr *)elf_data;
 
-    if (*(uint32_t *)ehdr->e_ident != ELF_MAGIC)
+    if (*(uint32_t *)ehdr->e_ident != ELF_MAGIC) {
         return -1;
+    }
 
     for (int i = 0; i < ehdr->e_phnum; i++) {
         Elf64_Phdr *phdr = (Elf64_Phdr *)((uint8_t *)elf_data + ehdr->e_phoff + i * ehdr->e_phentsize);
 
-        if (phdr->p_type != PT_LOAD)
+        if (phdr->p_type != PT_LOAD) {
             continue;
+        }
 
         memcpy((void *)phdr->p_vaddr,
                (uint8_t *)elf_data + phdr->p_offset,

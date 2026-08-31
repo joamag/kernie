@@ -1,5 +1,17 @@
-; boot.asm - boots from real mode into 64-bit long mode
-; then jumps to kernel_main
+; arch/x86_64/boot.asm
+;
+; The 512 byte boot sector, bringing the CPU from real mode to long mode and
+; handing control to the kernel.
+;
+; The kernel is read to 0x8000 first and copied to 0x100000 only once long mode
+; is entered, because the BIOS disk service is a real mode interrupt and cannot
+; address a megabyte from there. The read is a fixed 30 sectors, which is what
+; caps the kernel at 15360 bytes; build.sh fails the build rather than let it
+; grow past that and jump into whatever followed on disk.
+;
+; Paging is mandatory in long mode, so the tables at 0x1000 identity map the
+; first 4MB with two large pages. That covers the VGA buffer, the kernel and
+; the stack, and avoids the four levels of tables a 4KB mapping would need.
 
 [bits 16]
 [org 0x7C00]

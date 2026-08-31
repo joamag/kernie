@@ -1,3 +1,9 @@
+/**
+ * drivers/vga.h
+ *
+ * VGA text mode output, present on x86-64 only.
+ */
+
 #ifndef VGA_H
 #define VGA_H
 

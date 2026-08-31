@@ -1,3 +1,9 @@
+/**
+ * lib/mem.h
+ *
+ * The four memory primitives the compiler is allowed to assume exist.
+ */
+
 #ifndef MEM_H
 #define MEM_H
 

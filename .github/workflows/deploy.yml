@@ -1,0 +1,56 @@
+name: Deploy Workflow
+on:
+  push:
+    tags:
+      - "*"
+jobs:
+  build-images:
+    name: Build Images
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+      - name: Build Kernie
+        run: |
+          ARCH=${{ matrix.arch }} ./build.sh
+      - name: Stage the image
+        run: |
+          mkdir -p dist
+          if [ -f os.bin ]; then
+            cp os.bin "dist/kernie-${{ matrix.arch }}.bin"
+          fi
+          if [ -f kernel.elf ]; then
+            cp kernel.elf "dist/kernie-${{ matrix.arch }}.elf"
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: images-${{ matrix.arch }}
+          path: dist/*
+  publish:
+    name: Publish Release
+    timeout-minutes: 30
+    needs: [build-images]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Publish the images
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes

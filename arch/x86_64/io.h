@@ -1,3 +1,12 @@
+/**
+ * arch/x86_64/io.h
+ *
+ * Port I/O helpers, x86-64 only.
+ *
+ * arm64 has no separate port space at all, which is why nothing outside
+ * arch/x86_64 and the drivers it selects may include this.
+ */
+
 #ifndef IO_H
 #define IO_H
 

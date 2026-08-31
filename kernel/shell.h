@@ -1,3 +1,9 @@
+/**
+ * kernel/shell.h
+ *
+ * The line buffered command shell.
+ */
+
 #ifndef SHELL_H
 #define SHELL_H
 

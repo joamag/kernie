@@ -1,7 +1,27 @@
+/**
+ * kernel/shell.c
+ *
+ * Line buffered command shell.
+ *
+ * Runs entirely outside interrupt context, driven by input_poll from the idle
+ * loop, so a command is free to take as long as it needs to write its output.
+ *
+ * Commands are dispatched by a chain of comparisons rather than a table. With
+ * six of them the table would cost more to read than it saves, and the point
+ * at which that stops being true is obvious enough to act on when it arrives.
+ *
+ * Reboot and power off are delegated to the architecture, since one is a
+ * keyboard controller pulse and the other an ACPI write on x86-64, while both
+ * are PSCI calls on arm64.
+ *
+ * A line feed arriving straight after a carriage return is swallowed, so that
+ * a terminal configured to send the pair does not run a second, empty
+ * command.
+ */
+
 #include "kernel/shell.h"
-#include "drivers/vga.h"
-#include "drivers/serial.h"
-#include "arch/x86_64/io.h"
+#include "kernel/console.h"
+#include "kernel/arch.h"
 #include "kernel/version.h"
 
 #define CMD_MAX 256
@@ -11,129 +31,125 @@ static int cmd_len = 0;
 static int last_was_cr = 0;
 
 static void print(const char *str, uint8_t color) {
-    vga_print(str, color);
-    serial_print(str);
+    console_print(str, color);
 }
 
 static void prompt(void) {
-    print("> ", VGA_WHITE_ON_BLACK);
+    print("> ", CONSOLE_WHITE);
 }
 
 static void splash(void) {
     print("  --------------------------------------------------------------------------\n",
-          VGA_BLUE_ON_BLACK);
-    print("\n", VGA_WHITE_ON_BLACK);
+          CONSOLE_BLUE);
+    print("\n", CONSOLE_WHITE);
 
-    /* Folded-K symbol and wordmark, kept below 80 columns for VGA text mode. */
-    print("        ||      ", VGA_BLUE_ON_BLACK);
-    print("//////      ", VGA_CYAN_ON_BLACK);
-    print("_  __ _____ ____  _   _ ___ _____\n", VGA_WHITE_ON_BLACK);
+    // Folded-K symbol and wordmark, kept below 80 columns for VGA text mode.
+    print("        ||      ", CONSOLE_BLUE);
+    print("//////      ", CONSOLE_CYAN);
+    print("_  __ _____ ____  _   _ ___ _____\n", CONSOLE_WHITE);
 
-    print("        ||    ", VGA_BLUE_ON_BLACK);
-    print("//////        ", VGA_CYAN_ON_BLACK);
-    print("| |/ /| ____|  _ \\| \\ | |_ _| ____|\n", VGA_WHITE_ON_BLACK);
+    print("        ||    ", CONSOLE_BLUE);
+    print("//////        ", CONSOLE_CYAN);
+    print("| |/ /| ____|  _ \\| \\ | |_ _| ____|\n", CONSOLE_WHITE);
 
-    print("        ||", VGA_BLUE_ON_BLACK);
-    print("<<                ", VGA_CYAN_ON_BLACK);
-    print("| ' / |  _| | |_) |  \\| || ||  _|\n", VGA_WHITE_ON_BLACK);
+    print("        ||", CONSOLE_BLUE);
+    print("<<                ", CONSOLE_CYAN);
+    print("| ' / |  _| | |_) |  \\| || ||  _|\n", CONSOLE_WHITE);
 
-    print("        ||    ", VGA_BLUE_ON_BLACK);
-    print("\\\\\\\\\\\\        ", VGA_MAGENTA_ON_BLACK);
-    print("| . \\ | |___|  _ <| |\\  || || |___\n", VGA_WHITE_ON_BLACK);
+    print("        ||    ", CONSOLE_BLUE);
+    print("\\\\\\\\\\\\        ", CONSOLE_MAGENTA);
+    print("| . \\ | |___|  _ <| |\\  || || |___\n", CONSOLE_WHITE);
 
-    print("        ||      ", VGA_BLUE_ON_BLACK);
-    print("\\\\\\\\\\\\      ", VGA_MAGENTA_ON_BLACK);
-    print("|_|\\_\\|_____|_| \\_\\_| \\_|___|_____|\n", VGA_WHITE_ON_BLACK);
+    print("        ||      ", CONSOLE_BLUE);
+    print("\\\\\\\\\\\\      ", CONSOLE_MAGENTA);
+    print("|_|\\_\\|_____|_| \\_\\_| \\_|___|_____|\n", CONSOLE_WHITE);
 
-    print("\n", VGA_WHITE_ON_BLACK);
+    print("\n", CONSOLE_WHITE);
     print("               A tiny kernel with unreasonable ambitions.\n",
-          VGA_GREEN_ON_BLACK);
-    print("\n", VGA_WHITE_ON_BLACK);
+          CONSOLE_GREEN);
+    print("\n", CONSOLE_WHITE);
     print("  --------------------------------------------------------------------------\n",
-          VGA_BLUE_ON_BLACK);
+          CONSOLE_BLUE);
 
-    print("      VERSION  ", VGA_GRAY_ON_BLACK);
-    print(KERNIE_VERSION, VGA_YELLOW_ON_BLACK);
-    print("    ARCH  ", VGA_GRAY_ON_BLACK);
-    print(KERNIE_ARCH, VGA_CYAN_ON_BLACK);
-    print("    BUILT  ", VGA_GRAY_ON_BLACK);
-    print(KERNIE_BUILD_DATE, VGA_WHITE_ON_BLACK);
-    print(" ", VGA_WHITE_ON_BLACK);
-    print(KERNIE_BUILD_TIME, VGA_WHITE_ON_BLACK);
-    print("\n", VGA_WHITE_ON_BLACK);
+    print("      VERSION  ", CONSOLE_GRAY);
+    print(KERNIE_VERSION, CONSOLE_YELLOW);
+    print("    ARCH  ", CONSOLE_GRAY);
+    print(KERNIE_ARCH, CONSOLE_CYAN);
+    print("    BUILT  ", CONSOLE_GRAY);
+    print(KERNIE_BUILD_DATE, CONSOLE_WHITE);
+    print(" ", CONSOLE_WHITE);
+    print(KERNIE_BUILD_TIME, CONSOLE_WHITE);
+    print("\n", CONSOLE_WHITE);
 
-    print("             [ VGA OK ]  [ SERIAL OK ]  [ SHELL READY ]\n",
-          VGA_GREEN_ON_BLACK);
+    print("             [ CONSOLE OK ]  [ SERIAL OK ]  [ SHELL READY ]\n",
+          CONSOLE_GREEN);
     print("  --------------------------------------------------------------------------\n",
-          VGA_BLUE_ON_BLACK);
-    print("\n", VGA_WHITE_ON_BLACK);
+          CONSOLE_BLUE);
+    print("\n", CONSOLE_WHITE);
 }
 
 static int streq(const char *a, const char *b) {
     while (*a && *b) {
-        if (*a++ != *b++) return 0;
+        if (*a++ != *b++) {
+            return 0;
+        }
     }
     return *a == *b;
 }
 
 static int starts_with(const char *str, const char *prefix) {
     while (*prefix) {
-        if (*str++ != *prefix++) return 0;
+        if (*str++ != *prefix++) {
+            return 0;
+        }
     }
     return 1;
 }
 
 static void cmd_help(void) {
-    print("Available commands:\n", VGA_WHITE_ON_BLACK);
-    print("  help       - show this message\n", VGA_WHITE_ON_BLACK);
-    print("  clear      - clear the screen\n", VGA_WHITE_ON_BLACK);
-    print("  echo <msg> - print a message\n", VGA_WHITE_ON_BLACK);
-    print("  tick       - show timer tick count\n", VGA_WHITE_ON_BLACK);
-    print("  reboot     - reboot the system\n", VGA_WHITE_ON_BLACK);
-    print("  shutdown   - power off the machine\n", VGA_WHITE_ON_BLACK);
+    print("Available commands:\n", CONSOLE_WHITE);
+    print("  help       - show this message\n", CONSOLE_WHITE);
+    print("  clear      - clear the screen\n", CONSOLE_WHITE);
+    print("  echo <msg> - print a message\n", CONSOLE_WHITE);
+    print("  tick       - show timer tick count\n", CONSOLE_WHITE);
+    print("  reboot     - reboot the system\n", CONSOLE_WHITE);
+    print("  shutdown   - power off the machine\n", CONSOLE_WHITE);
 }
 
 static void cmd_echo(const char *args) {
-    print(args, VGA_WHITE_ON_BLACK);
-    print("\n", VGA_WHITE_ON_BLACK);
+    print(args, CONSOLE_WHITE);
+    print("\n", CONSOLE_WHITE);
 }
 
-extern volatile uint64_t tick_count;
-
 static void cmd_tick(void) {
-    print("Ticks: ", VGA_WHITE_ON_BLACK);
-    vga_print_hex(tick_count, VGA_GREEN_ON_BLACK);
-    serial_print_hex(tick_count);
-    print("\n", VGA_WHITE_ON_BLACK);
+    print("Ticks: ", CONSOLE_WHITE);
+    console_print_hex(arch_ticks(), CONSOLE_GREEN);
+    print("\n", CONSOLE_WHITE);
 }
 
 static void cmd_reboot(void) {
-    print("Rebooting...\n", VGA_RED_ON_BLACK);
-    /* pulse the keyboard controller reset line */
-    outb(0x64, 0xFE);
+    print("Rebooting...\n", CONSOLE_RED);
+    arch_reboot();
 }
 
 static void cmd_shutdown(void) {
-    print("Shutting down...\n", VGA_RED_ON_BLACK);
-    /* enter ACPI sleep state 5, the port differs between emulators */
-    outw(0x604, 0x2000);
-    outw(0xB004, 0x2000);
-    outw(0x4004, 0x3400);
+    print("Shutting down...\n", CONSOLE_RED);
+    arch_shutdown();
 }
 
 static void execute(void) {
     cmd_buf[cmd_len] = 0;
 
     if (cmd_len == 0) {
-        /* empty command */
+        // empty command
     } else if (streq(cmd_buf, "help")) {
         cmd_help();
     } else if (streq(cmd_buf, "clear")) {
-        vga_clear();
+        console_clear();
     } else if (starts_with(cmd_buf, "echo ")) {
         cmd_echo(cmd_buf + 5);
     } else if (streq(cmd_buf, "echo")) {
-        print("\n", VGA_WHITE_ON_BLACK);
+        print("\n", CONSOLE_WHITE);
     } else if (streq(cmd_buf, "tick")) {
         cmd_tick();
     } else if (streq(cmd_buf, "reboot")) {
@@ -141,8 +157,8 @@ static void execute(void) {
     } else if (streq(cmd_buf, "shutdown")) {
         cmd_shutdown();
     } else {
-        print(cmd_buf, VGA_RED_ON_BLACK);
-        print(": command not found\n", VGA_RED_ON_BLACK);
+        print(cmd_buf, CONSOLE_RED);
+        print(": command not found\n", CONSOLE_RED);
     }
 
     cmd_len = 0;
@@ -151,12 +167,12 @@ static void execute(void) {
 
 void shell_init(void) {
     splash();
-    print("  Type 'help' for available commands.\n\n", VGA_WHITE_ON_BLACK);
+    print("  Type 'help' for available commands.\n\n", CONSOLE_WHITE);
     prompt();
 }
 
 void shell_handle_char(char c) {
-    /* swallow the LF of a CRLF pair, it is not a second command */
+    // swallow the LF of a CRLF pair, it is not a second command
     if (c == '\n' && last_was_cr) {
         last_was_cr = 0;
         return;
@@ -165,19 +181,17 @@ void shell_handle_char(char c) {
     last_was_cr = (c == '\r');
 
     if (c == '\n' || c == '\r') {
-        print("\n", VGA_WHITE_ON_BLACK);
+        print("\n", CONSOLE_WHITE);
         execute();
     } else if (c == '\b' || c == 127) {
         if (cmd_len > 0) {
             cmd_len--;
-            /* move cursor back, overwrite with space, move back again */
-            vga_print("\b \b", VGA_WHITE_ON_BLACK);
-            serial_print("\b \b");
+            // move cursor back, overwrite with space, move back again
+            print("\b \b", CONSOLE_WHITE);
         }
     } else if (cmd_len < CMD_MAX - 1) {
         cmd_buf[cmd_len++] = c;
         char str[2] = {c, 0};
-        vga_print(str, VGA_WHITE_ON_BLACK);
-        serial_putchar(c);
+        print(str, CONSOLE_WHITE);
     }
 }
