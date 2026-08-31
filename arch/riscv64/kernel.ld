@@ -32,7 +32,7 @@ SECTIONS {
 
     .bss : {
         __bss_start = .;
-        *(.bss .bss.* COMMON)
+        *(.bss .bss.* .sbss .sbss.* COMMON)
         __bss_end = .;
     }
 

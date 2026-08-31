@@ -39,6 +39,16 @@ expect_in () {
     esac
 }
 
+# expect_line <description> <exact line> <haystack> - the shell echoes what is
+# typed, so only a line matching the payload on its own proves it ran
+expect_line () {
+    if printf '%s' "$3" | tr -d '\r' | grep -qx "$2"; then
+        ok "$1"
+    else
+        no "$1" "expected a line reading exactly '$2'"
+    fi
+}
+
 # expect_not_in <description> <needle> <haystack>
 expect_not_in () {
     case "$3" in
@@ -83,6 +93,7 @@ run_guest () {
             -kernel kernel.elf -display none -serial stdio < "$fifo" > "$log" 2>&1 &
         ;;
     riscv64)
+        # QEMU_EXTRA has to split into separate arguments
         # shellcheck disable=SC2086
         qemu-system-riscv64 -machine virt -bios none -m 128 $QEMU_EXTRA \
             -kernel kernel.elf -display none -serial stdio < "$fifo" > "$log" 2>&1 &
@@ -203,6 +214,18 @@ echo b2
 echo b3"
 expect_in "a pasted burst is not dropped" "b3" "$GUEST_OUT"
 
+# counting banners only proves the machine came back, so a command is run
+# afterwards to prove the shell is still usable rather than left holding stale
+# state that survived the reset
+run_guest x86_64 "reboot" "echo back up"
+banners=$(printf '%s' "$GUEST_OUT" | grep -c 'unreasonable ambitions')
+if [ "$banners" -ge 2 ]; then
+    ok "reboot restarts the x86_64 guest"
+else
+    no "reboot restarts the x86_64 guest" "saw $banners banners, expected 2"
+fi
+expect_line "the x86_64 shell works after a reboot" "back up" "$GUEST_OUT"
+
 run_guest x86_64 "shutdown"
 if [ "$GUEST_ALIVE" = "no" ]; then
     ok "shutdown powers off x86_64"
@@ -231,6 +254,7 @@ if [ "$banners" -ge 2 ]; then
 else
     no "reboot restarts the arm64 guest" "saw $banners banners, expected 2"
 fi
+expect_line "the arm64 shell works after a reboot" "back up" "$GUEST_OUT"
 
 # boot.S parks every core but the first, so a second cpu must not reach
 # kernel_main and print a banner of its own
@@ -284,6 +308,7 @@ if [ "$banners" -ge 2 ]; then
 else
     no "reboot restarts the riscv64 guest" "saw $banners banners, expected 2"
 fi
+expect_line "the riscv64 shell works after a reboot" "back up" "$GUEST_OUT"
 
 # every hart enters _start, so all but the boot one have to be parked before
 # they reach the shared console and command buffer

@@ -69,7 +69,9 @@ ARCH=riscv64 ./build.sh   # riscv64, produces kernel.elf
 
 The x86-64 build assembles the boot sector, assembles the ISR stubs, compiles each `.c` file freestanding, links a flat binary at `0x100000`, concatenates the boot sector and the kernel into `os.bin`, and pads the image to 32KB. It fails rather than producing a broken image if the kernel outgrows either the 30 sectors the boot sector reads (15360 bytes) or the 32KB image pad.
 
-The arm64 and riscv64 builds have no boot sector, since QEMU loads `kernel.elf` directly and jumps to `_start`. The riscv64 build is compiled for `rv64imac`, an ISA string without the floating point extensions, so the compiler cannot reach a register file that is never enabled. It is compiled with `-mstrict-align`, because the MMU is not enabled yet, so memory is treated as Device type and an unaligned access raises an alignment fault.
+The arm64 and riscv64 builds have no boot sector, since QEMU loads `kernel.elf` directly and jumps to `_start`.
+
+The arm64 build is compiled with `-mstrict-align`, because its MMU is not enabled yet, so memory is treated as Device type and an unaligned access raises an alignment fault. The riscv64 build instead uses `-march=rv64imac`, an ISA string without the floating point extensions, so the compiler cannot reach a register file that is never enabled, together with `-mcmodel=medany` because the kernel is linked at `0x80000000`.
 
 Object files land in `build/$ARCH/`.
 
