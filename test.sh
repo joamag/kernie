@@ -253,6 +253,14 @@ expect_in "the test workflow forces a pipefail shell" "shell: bash" \
 expect_not_in "version.h carries no architecture conditional" "__aarch64__" "$(cat kernel/version.h)"
 expect_in "the build supplies the architecture label" "-DKERNIE_ARCH" "$(cat build.sh)"
 
+# the README, the roadmap and AGENTS.md all say the suite runs on Linux, so
+# assert the workflow still matches rather than waiting for a reviewer to spot
+# the drift
+expect_not_in "macOS does not run the QEMU suite" "test.sh" \
+    "$(sed -n '/^  build-macos:/,/^  build-toolchain:/p' .github/workflows/main.yml)"
+expect_in "the QEMU suite runs on Linux" "runs-on: ubuntu-latest" \
+    "$(sed -n '/^  build-test:/,$p' .github/workflows/main.yml)"
+
 if grep -rqE '#(if |ifdef |elif )' kernel lib --include='*.c' --include='*.h'; then
     no "kernel and lib carry no conditional compilation"
 else

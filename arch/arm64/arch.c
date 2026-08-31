@@ -30,6 +30,12 @@ void arch_idle(void) {
 static void psci_call(uint32_t fn) {
     register uint64_t x0 __asm__("x0") = fn;
     __asm__ volatile ("hvc #0" : "+r"(x0) : : "memory");
+
+    // neither SYSTEM_OFF nor SYSTEM_RESET returns when it succeeds, so
+    // arriving here means the call was rejected and x0 carries the reason
+    serial_print("PSCI call rejected, status ");
+    serial_print_hex(x0);
+    serial_print("\n");
 }
 
 void arch_reboot(void) {

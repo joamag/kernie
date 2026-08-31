@@ -52,7 +52,7 @@ Networking is full of timeouts, so this is a networking prerequisite rather than
 ## Phase 4: testing
 
 - [x] Commit the QEMU harness as `test.sh`, covering toolchain selection, both builds and the shell on each target
-- [x] GitHub Actions workflows building and testing both targets on Linux and macOS
+- [x] GitHub Actions workflows building both targets on Linux and macOS, and running the QEMU suite on Linux
 - [ ] Host compiled unit tests for logic that does not need a kernel, such as checksums, the ARP table and the TCP state machine
 
 ## Phase 5: ELF loading

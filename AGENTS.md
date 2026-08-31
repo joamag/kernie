@@ -71,7 +71,7 @@ There is no `.clang-format` and no formatter for the C sources, so match the sur
 
 ## Continuous Integration
 
-`.github/workflows/main.yml` lints the scripts, builds both targets on Linux and macOS, builds x86-64 across several GCC versions, and runs `test.sh` under QEMU. `.github/workflows/deploy.yml` publishes bootable images on tags.
+`.github/workflows/main.yml` lints the scripts, builds both targets on Linux and macOS, builds x86-64 across several GCC versions, and runs `test.sh` under QEMU on Linux. `.github/workflows/deploy.yml` publishes bootable images on tags.
 
 The Linux arm64 job is the one that exercises the Debian toolchain fallback, since `aarch64-elf-gcc` is not packaged there. Keep that job, it covers a path no macOS machine can reach.
 
@@ -227,7 +227,7 @@ version: 0.2.0
 ## New Release
 
 - Make sure both targets build and `./test.sh` passes.
-- Update `KERNIE_VERSION` in `kernel/version.h`. The architecture string is derived from the compiler and the build stamp is filled in automatically, so neither needs touching.
+- Update `KERNIE_VERSION` in `kernel/version.h`. This is the only place a version is recorded, and it is bumped here rather than on a feature branch. The architecture label comes from `build.sh` and the build stamp from the preprocessor, so neither needs touching.
 - Create a commit with the message `version: $VERSION_NUMBER`.
 - Push the commit and create a tag with the value of the new version number.
 - The deploy workflow builds both targets on that tag and attaches `kernie-x86_64.bin` and `kernie-arm64.elf` to a new GitHub release.
