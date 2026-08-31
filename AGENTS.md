@@ -7,6 +7,7 @@ The build system is a single shell script. `ARCH` selects the target and default
 ```bash
 ./build.sh                # x86-64, produces os.bin
 ARCH=arm64 ./build.sh     # arm64, produces kernel.elf
+ARCH=riscv64 ./build.sh   # riscv64, produces kernel.elf
 ```
 
 The host compiler is only usable when it already targets the right architecture and object format, so a cross toolchain is required on macOS, where the system `gcc` is Apple clang targeting arm64 Mach-O. The script prints the toolchain it selected before anything else, which is the first thing to read when a build behaves unexpectedly:
@@ -18,7 +19,7 @@ The host compiler is only usable when it already targets the right architecture 
   LD:   aarch64-linux-gnu-ld
 ```
 
-Selection prefers the bare metal `*-elf-*` tools and falls back to the Debian and Ubuntu `aarch64-linux-gnu-*` ones, which are fine because nothing links against a libc. Both `CC` and `LD` override either path.
+Selection prefers the bare metal `*-elf-*` tools and falls back to the Debian and Ubuntu `*-linux-gnu-*` ones, which are fine because nothing links against a libc. Both `CC` and `LD` override either path.
 
 ```bash
 # macOS
@@ -37,9 +38,10 @@ Object files land in `build/$ARCH/`, so switching targets never reuses stale obj
 ```bash
 qemu-system-x86_64 -drive format=raw,file=os.bin -nographic
 qemu-system-aarch64 -machine virt -cpu cortex-a72 -kernel kernel.elf -nographic
+qemu-system-riscv64 -machine virt -bios none -kernel kernel.elf -nographic
 ```
 
-The arm64 target is serial only, the `virt` machine has no text buffer and no PS/2 controller.
+The arm64 and riscv64 targets are serial only, the `virt` machine has no text buffer and no PS/2 controller. riscv64 runs with `-bios none`, so the kernel owns machine mode and there is no SBI firmware to call into.
 
 ## Testing
 
@@ -79,14 +81,14 @@ The Linux arm64 job is the one that exercises the Debian toolchain fallback, sin
 
 This is the part of the tree most easily broken by a well meaning change.
 
-`kernel/` and `lib/` compile unchanged for every target and must stay that way. There is not a single `#ifdef` in the tree and there should not be one. Selection happens at link time, through the source list `build.sh` assembles per architecture, so an architecture is added by writing files rather than by branching inside shared ones.
+`kernel/` and `lib/` compile unchanged for all three targets and must stay that way. There is not a single `#ifdef` in the tree and there should not be one. Selection happens at link time, through the source list `build.sh` assembles per architecture, so an architecture is added by writing files rather than by branching inside shared ones.
 
 Shared code reaches the machine through two contracts:
 
 - `kernel/console.h` carries `console_init`, `console_clear`, `console_print` and `console_print_hex`, plus the colour attributes. x86-64 mirrors output to the VGA text buffer and the UART, arm64 writes to the UART alone and discards the colour.
 - `kernel/arch.h` carries `arch_init`, `arch_idle`, `arch_reboot`, `arch_shutdown` and `arch_ticks`.
 
-`arch_idle` is what the idle loop calls after draining the input queue. On x86-64 it halts until the next interrupt. On arm64 there is no GIC yet, so it polls the UART and feeds `input_handle_char`, which is why `arch_ticks` returns zero there and `tick` always reads zero.
+`arch_idle` is what the idle loop calls after draining the input queue. On x86-64 it halts until the next interrupt. On arm64 and riscv64 there is no interrupt controller yet, so it polls the UART and feeds `input_handle_char`, which is why `arch_ticks` returns zero there and `tick` always reads zero.
 
 Where things belong:
 
@@ -110,6 +112,8 @@ These have each cost real debugging time. Read them before changing build flags.
 **GCC emits calls to `memcpy`, `memset`, `memmove` and `memcmp` even under `-ffreestanding`**, for struct assignments and any copy it decides not to inline. `lib/mem.c` provides them. It is also built with `-fno-tree-loop-distribute-patterns`, without which GCC rewrites the byte loop inside `memcpy` into a call to `memcpy` and recurses forever. That flag is feature tested because clang rejects it.
 
 **No SIMD anywhere.** `boot.asm` never sets CR4.OSFXSR, so any SSE instruction the compiler chose to emit would raise an undefined instruction fault. `-mgeneral-regs-only` keeps it out.
+
+**riscv64 is built for `rv64imac`**, an ISA string without the F and D extensions, so the compiler cannot emit an instruction touching a floating point register file that is never enabled. `-mcmodel=medany` goes with it, because the kernel is linked at `0x80000000` rather than in the low 2GB the default model assumes.
 
 **The arm64 MMU is off**, so every access is treated as Device memory, where an unaligned access raises an alignment fault. `VBAR_EL1` is never set, so such a fault hangs the CPU with no output at all. `-mstrict-align` avoids the accesses. Enabling the MMU with a normal memory mapping is the real fix and belongs with the memory management work.
 
